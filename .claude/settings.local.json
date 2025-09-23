@@ -3,7 +3,10 @@
     "allow": [
       "Bash(dotnet build)",
       "Bash(find:*)",
-      "Bash(dotnet --version)"
+      "Bash(dotnet --version)",
+      "Bash(dotnet run:*)",
+      "Bash(chmod:*)",
+      "Bash(./simulate-startup.sh:*)"
     ],
     "deny": [],
     "ask": []

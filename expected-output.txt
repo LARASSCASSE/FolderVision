@@ -1,0 +1,120 @@
+# Expected Console Output - FolderVision Startup
+
+## Application Header
+╔══════════════════════════════════════════════════════════════════════════╗
+║                             FOLDER VISION                               ║
+║                    Professional Multi-Threaded Scanner                  ║
+║                         Generate Beautiful HTML Reports                 ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+Welcome! This application will help you scan and analyze folder structures
+with multi-threaded performance and generate professional HTML reports.
+
+Press any key to continue...
+
+## Main Menu
+╔══════════════════════════════════════════════════════════════════════════╗
+║                        FOLDER VISION                        ║
+║                  Multi-Threaded Folder Scanner              ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+═══ MAIN MENU ═══
+
+1. Scan Drives
+2. Scan Custom Folders
+3. Settings
+4. View Previous Scan Results
+5. Exit
+
+Select an option (1-5): _
+
+## Drive Scanner (Option 1)
+═══ DRIVE SCANNER ═══
+
+Available Drives:
+═════════════════
+
+ 1. C:\  [Fixed     ] Windows
+     Total: 500.0 GB   Used: 300.0 GB   Free: 200.0 GB   (60.0% used)
+
+ 2. D:\  [Fixed     ] Data
+     Total: 1.0 TB     Used: 750.0 GB   Free: 250.0 GB   (75.0% used)
+
+ 3. E:\  [Removable ] USB Drive 💾 Removable
+     Total: 32.0 GB    Used: 15.0 GB    Free: 17.0 GB    (46.9% used)
+
+Enter drive numbers to scan (e.g., 1,3,4) or 'all' for all drives:
+Selection: _
+
+## Folder Scanner (Option 2)
+═══ FOLDER SCANNER ═══
+
+Enter folder paths to scan (one per line, empty line to finish):
+Examples:
+  C:\Users
+  D:\Projects
+  /home/user/documents
+
+Folder 1: _
+
+## Settings (Option 3)
+═══ SETTINGS ═══
+
+Current default settings:
+• Max Threads: 8
+• Skip Hidden Folders: Yes
+• Skip System Folders: Yes
+
+Settings are configured per scan.
+
+## Scanning Progress Example
+ℹ️  Starting scan of 1 path(s) with 8 threads...
+Press ESC to cancel the scan.
+
+📁 Scanning: C:\Users\Example\Documents
+Progress: [████████████████████████████████████████] 100% (1,234/1,234 folders)
+Files: 5,678 | Folders: 1,234 | Speed: 156 folders/sec
+Elapsed: 00:00:08 | Remaining: 00:00:00
+
+✅ Scan completed successfully!
+
+═══ SCAN COMPLETED ═══
+
+Scan Duration: 00:00:08
+Total Folders: 1,234
+Total Files: 5,678
+Root Folders Found: 1
+
+Scanned Locations:
+  • C:\Users\Example\Documents: 1,234 folders, 5,678 files
+
+Export results to HTML report? (y/n): _
+
+## HTML Export Progress
+ℹ️  Generating HTML report...
+Generating HTML report... 50% (617/1,234)
+✅ HTML report generated successfully!
+ℹ️  Location: C:\Users\Example\Desktop\FolderScan_20240115_143022_Documents.html
+
+Choose what to do next:
+1. Open HTML report in browser
+2. Show report file location
+3. Perform another scan
+4. Return to main menu
+Your choice (1-4): _
+
+## Error Handling Examples
+❌ Error: Directory not found: C:\NonExistent
+⚠️  Warning: Access denied to drive F:\ - skipping
+⚠️  Network drive - scanning may be slow
+
+## Graceful Shutdown (Ctrl+C)
+╔════════════════════════════════════════════════════════════════╗
+║                    SHUTDOWN REQUESTED                         ║
+╚════════════════════════════════════════════════════════════════╝
+
+Gracefully shutting down FolderVision...
+Please wait for any ongoing operations to complete.
+
+Thank you for using FolderVision!
+Have a great day!
