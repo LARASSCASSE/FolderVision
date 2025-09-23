@@ -37,10 +37,24 @@ namespace FolderVision.Ui
                     switch (choice)
                     {
                         case "1":
-                            await ScanDrivesAsync();
+                            var driveResult = await PerformDriveScanAsync();
+                            if (driveResult != null)
+                            {
+                                if (ConfirmAction("Export results to HTML? (y/n): "))
+                                {
+                                    await ExportResultsAsync(driveResult);
+                                }
+                            }
                             break;
                         case "2":
-                            await ScanFoldersAsync();
+                            var folderResult = await PerformFolderScanAsync();
+                            if (folderResult != null)
+                            {
+                                if (ConfirmAction("Export results to HTML? (y/n): "))
+                                {
+                                    await ExportResultsAsync(folderResult);
+                                }
+                            }
                             break;
                         case "3":
                             ShowSettings();
@@ -91,12 +105,19 @@ namespace FolderVision.Ui
             Console.WriteLine("1. Scan Drives");
             Console.WriteLine("2. Scan Custom Folders");
             Console.WriteLine("3. Settings");
-            Console.WriteLine("4. Exit");
+            Console.WriteLine("4. View Previous Scan Results");
+            Console.WriteLine("5. Exit");
             Console.WriteLine();
-            Console.Write("Select an option (1-4): ");
+            Console.Write("Select an option (1-5): ");
         }
 
-        private async Task ScanDrivesAsync()
+        public async Task<string> ShowMainMenuAndGetChoiceAsync()
+        {
+            ShowMainMenu();
+            return await Task.FromResult(GetUserChoice());
+        }
+
+        public async Task<ScanResult?> PerformDriveScanAsync()
         {
             Clear();
             SetConsoleColor(ConsoleColor.Green);
@@ -108,7 +129,7 @@ namespace FolderVision.Ui
             if (!drives.Any())
             {
                 DisplayError("No drives found!");
-                return;
+                return null;
             }
 
             DisplayDrives(drives);
@@ -117,16 +138,16 @@ namespace FolderVision.Ui
             if (!selectedDrives.Any())
             {
                 DisplayWarning("No drives selected.");
-                return;
+                return null;
             }
 
             var settings = GetScanSettings();
             var drivePaths = selectedDrives.Select(d => d.RootDirectory.FullName).ToList();
 
-            await PerformScanAsync(drivePaths, settings);
+            return await PerformScanAsync(drivePaths, settings);
         }
 
-        private async Task ScanFoldersAsync()
+        public async Task<ScanResult?> PerformFolderScanAsync()
         {
             Clear();
             SetConsoleColor(ConsoleColor.Green);
@@ -138,14 +159,15 @@ namespace FolderVision.Ui
             if (!folders.Any())
             {
                 DisplayWarning("No folders selected.");
-                return;
+                return null;
             }
 
             var settings = GetScanSettings();
-            await PerformScanAsync(folders, settings);
+            return await PerformScanAsync(folders, settings);
         }
 
-        private async Task PerformScanAsync(List<string> paths, ScanSettings settings)
+
+        private async Task<ScanResult?> PerformScanAsync(List<string> paths, ScanSettings settings)
         {
             _threadManager = new ThreadManager(settings.MaxThreads);
             _progressTracker = new ProgressTracker();
@@ -187,16 +209,12 @@ namespace FolderVision.Ui
                 var result = await scanTask;
 
                 _progressDisplay.CompleteScan();
-                DisplayScanResult(result);
-
-                if (ConfirmAction("Export results to HTML? (y/n): "))
-                {
-                    await ExportResultsAsync(result);
-                }
+                return result;
             }
             catch (Exception ex)
             {
                 DisplayError($"Scan failed: {ex.Message}");
+                return null;
             }
             finally
             {
@@ -490,6 +508,19 @@ namespace FolderVision.Ui
         private void ResetConsoleColor()
         {
             Console.ResetColor();
+        }
+
+        public void Cleanup()
+        {
+            try
+            {
+                _threadManager?.Dispose();
+                _progressTracker = null;
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
         }
     }
 }
