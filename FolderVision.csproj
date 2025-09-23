@@ -16,8 +16,6 @@
     <PackageVersion>1.0.0</PackageVersion>
     <PackageDescription>Professional folder scanning tool with multi-threaded performance and beautiful HTML reports</PackageDescription>
     <PackageTags>folder;scanner;directory;files;html;report;multithreaded</PackageTags>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <!-- Release Configuration -->
