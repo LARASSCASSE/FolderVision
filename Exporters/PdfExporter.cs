@@ -207,7 +207,7 @@ namespace FolderVision.Exporters
                 {
                     var subList = new List();
                     AddTocSubfolders(subList, subFolder, currentDepth + 1, maxDepth);
-                    if (subList.IsEmpty() == false)
+                    if (subList.Count > 0)
                     {
                         parentList.Add(new ListItem().Add(subList));
                     }

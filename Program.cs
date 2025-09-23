@@ -23,6 +23,15 @@ namespace FolderVision
 
             try
             {
+                // Temporary test mode - uncomment to test utilities
+                if (args.Length > 0 && args[0] == "--test")
+                {
+                    TestFileHelper.RunTests();
+                    TestPdfIntegration.RunTests();
+                    TestWorkflow.RunWorkflowTests();
+                    return;
+                }
+
                 await RunApplicationAsync();
             }
             catch (Exception ex)
