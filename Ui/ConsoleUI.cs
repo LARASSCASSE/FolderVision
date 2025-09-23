@@ -9,6 +9,14 @@ using FolderVision.Exporters;
 
 namespace FolderVision.Ui
 {
+    public enum ExportFormat
+    {
+        None,
+        HtmlOnly,
+        PdfOnly,
+        Both
+    }
+
     public class ConsoleUI
     {
         private readonly ProgressDisplay _progressDisplay;
@@ -40,9 +48,10 @@ namespace FolderVision.Ui
                             var driveResult = await PerformDriveScanAsync();
                             if (driveResult != null)
                             {
-                                if (ConfirmAction("Export results to HTML? (y/n): "))
+                                var exportChoice = GetExportFormatChoice();
+                                if (exportChoice != ExportFormat.None)
                                 {
-                                    await ExportResultsAsync(driveResult);
+                                    await ExportResultsAsync(driveResult, exportChoice);
                                 }
                             }
                             break;
@@ -50,9 +59,10 @@ namespace FolderVision.Ui
                             var folderResult = await PerformFolderScanAsync();
                             if (folderResult != null)
                             {
-                                if (ConfirmAction("Export results to HTML? (y/n): "))
+                                var exportChoice = GetExportFormatChoice();
+                                if (exportChoice != ExportFormat.None)
                                 {
-                                    await ExportResultsAsync(folderResult);
+                                    await ExportResultsAsync(folderResult, exportChoice);
                                 }
                             }
                             break;
@@ -437,20 +447,187 @@ namespace FolderVision.Ui
             Console.WriteLine("Settings are configured per scan.");
         }
 
-        private async Task ExportResultsAsync(ScanResult result)
+        public async Task ExportResultsAsync(ScanResult result, ExportFormat format)
         {
             try
             {
-                var exporter = new HtmlExporter();
-                var outputPath = GetExportPath();
+                string outputFolder = "";
 
-                DisplayInfo("Exporting results...");
-                await exporter.ExportAsync(result, outputPath);
-                DisplaySuccess($"Results exported to: {outputPath}");
+                switch (format)
+                {
+                    case ExportFormat.HtmlOnly:
+                        DisplayInfo("Generating HTML report...");
+                        var htmlExporter = new HtmlExporter();
+                        await htmlExporter.ExportAsync(result);
+                        outputFolder = GetOutputFolderPath(result);
+                        DisplaySuccess("HTML report generated successfully!");
+                        break;
+
+                    case ExportFormat.PdfOnly:
+                        DisplayInfo("Generating PDF report...");
+                        var pdfExporter = new PdfExporter();
+                        await pdfExporter.ExportAsync(result);
+                        outputFolder = GetOutputFolderPath(result);
+                        DisplaySuccess("PDF report generated successfully!");
+                        break;
+
+                    case ExportFormat.Both:
+                        DisplayInfo("Generating reports...");
+                        var htmlExp = new HtmlExporter();
+                        var pdfExp = new PdfExporter();
+
+                        DisplayInfo("Creating HTML report...");
+                        await htmlExp.ExportAsync(result);
+                        DisplaySuccess("HTML report completed!");
+
+                        DisplayInfo("Creating PDF report...");
+                        await pdfExp.ExportAsync(result);
+                        DisplaySuccess("PDF report completed!");
+
+                        outputFolder = GetOutputFolderPath(result);
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(outputFolder))
+                {
+                    DisplayReportResults(outputFolder, format);
+
+                    if (ConfirmAction("Open folder containing reports? (y/n): "))
+                    {
+                        OpenFolder(outputFolder);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 DisplayError($"Export failed: {ex.Message}");
+            }
+        }
+
+        public ExportFormat GetExportFormatChoice()
+        {
+            Console.WriteLine();
+            SetConsoleColor(ConsoleColor.Yellow);
+            Console.WriteLine("═══ EXPORT OPTIONS ═══");
+            ResetConsoleColor();
+            Console.WriteLine();
+            Console.WriteLine("Choose export format:");
+            Console.WriteLine("1. HTML report only");
+            Console.WriteLine("2. PDF report only");
+            Console.WriteLine("3. Both HTML and PDF reports (recommended)");
+            Console.WriteLine("4. Skip export");
+            Console.WriteLine();
+            Console.Write("Select option (1-4) [3]: ");
+
+            var input = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(input)) input = "3"; // Default to both
+
+            return input switch
+            {
+                "1" => ExportFormat.HtmlOnly,
+                "2" => ExportFormat.PdfOnly,
+                "3" => ExportFormat.Both,
+                "4" => ExportFormat.None,
+                _ => ExportFormat.Both // Default to both
+            };
+        }
+
+        private void DisplayReportResults(string outputFolder, ExportFormat format)
+        {
+            Console.WriteLine();
+            SetConsoleColor(ConsoleColor.Green);
+            Console.WriteLine("═══ REPORTS GENERATED ═══");
+            ResetConsoleColor();
+            Console.WriteLine();
+            DisplayInfo($"Reports saved to: {outputFolder}");
+            Console.WriteLine();
+            Console.WriteLine("Files created:");
+
+            if (format == ExportFormat.HtmlOnly || format == ExportFormat.Both)
+            {
+                SetConsoleColor(ConsoleColor.Green);
+                Console.WriteLine("  ✓ FolderScan_Report.html");
+                ResetConsoleColor();
+            }
+
+            if (format == ExportFormat.PdfOnly || format == ExportFormat.Both)
+            {
+                SetConsoleColor(ConsoleColor.Green);
+                Console.WriteLine("  ✓ FolderScan_Report.pdf");
+                ResetConsoleColor();
+            }
+        }
+
+        public string GetOutputFolderPath(ScanResult scanResult)
+        {
+            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var folderName = GenerateOutputFolderName(scanResult, timestamp);
+            return Path.Combine(desktop, folderName);
+        }
+
+        private string GenerateOutputFolderName(ScanResult scanResult, string timestamp)
+        {
+            if (scanResult.ScannedPaths.Count == 0)
+            {
+                return $"Unknown_Scan_{timestamp}";
+            }
+
+            if (scanResult.ScannedPaths.Count > 1)
+            {
+                return $"Multi_Scan_{timestamp}";
+            }
+
+            var path = scanResult.ScannedPaths[0];
+
+            if (path.Length >= 2 && path[1] == ':')
+            {
+                var driveLetter = path[0].ToString().ToUpper();
+                return $"{driveLetter}_Drive_Scan_{timestamp}";
+            }
+
+            var folderName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(folderName))
+            {
+                folderName = path.Replace(":", "").Replace("\\", "_").Replace("/", "_");
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = "Root";
+                }
+            }
+
+            var sanitizedName = string.Join("_", folderName.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
+            return $"{sanitizedName}_Scan_{timestamp}";
+        }
+
+        private void OpenFolder(string folderPath)
+        {
+            try
+            {
+                if (Directory.Exists(folderPath))
+                {
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        System.Diagnostics.Process.Start("explorer.exe", $"\"{folderPath}\"");
+                    }
+                    else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                    {
+                        System.Diagnostics.Process.Start("xdg-open", $"\"{folderPath}\"");
+                    }
+                    else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+                    {
+                        System.Diagnostics.Process.Start("open", $"\"{folderPath}\"");
+                    }
+                    DisplaySuccess("Folder opened successfully!");
+                }
+                else
+                {
+                    DisplayError("Output folder not found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayError($"Failed to open folder: {ex.Message}");
             }
         }
 

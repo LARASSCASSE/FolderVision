@@ -172,10 +172,12 @@ namespace FolderVision
                 {
                     _consoleUI.DisplayScanResult(result);
 
-                    if (_consoleUI.ConfirmAction("Export results to HTML report? (y/n): "))
+                    var exportChoice = _consoleUI.GetExportFormatChoice();
+                    if (exportChoice != ExportFormat.None)
                     {
-                        var exportPath = await ExportScanResults(result);
-                        return (result, exportPath);
+                        await _consoleUI.ExportResultsAsync(result, exportChoice);
+                        var outputFolder = _consoleUI.GetOutputFolderPath(result);
+                        return (result, outputFolder);
                     }
                     return (result, string.Empty);
                 }
@@ -200,10 +202,12 @@ namespace FolderVision
                 {
                     _consoleUI.DisplayScanResult(result);
 
-                    if (_consoleUI.ConfirmAction("Export results to HTML report? (y/n): "))
+                    var exportChoice = _consoleUI.GetExportFormatChoice();
+                    if (exportChoice != ExportFormat.None)
                     {
-                        var exportPath = await ExportScanResults(result);
-                        return (result, exportPath);
+                        await _consoleUI.ExportResultsAsync(result, exportChoice);
+                        var outputFolder = _consoleUI.GetOutputFolderPath(result);
+                        return (result, outputFolder);
                     }
                     return (result, string.Empty);
                 }
@@ -217,95 +221,6 @@ namespace FolderVision
             }
         }
 
-        private static async Task<string> ExportScanResults(ScanResult scanResult)
-        {
-            try
-            {
-                _consoleUI!.DisplayInfo("Generating reports...");
-
-                var htmlExporter = new HtmlExporter();
-                var pdfExporter = new PdfExporter();
-
-                htmlExporter.ExportProgress += (sender, e) =>
-                {
-                    if (e.PercentComplete % 10 == 0 || e.PercentComplete == 100)
-                    {
-                        Console.Write($"\rGenerating HTML report... {e.PercentComplete}% ({e.ProcessedItems}/{e.TotalItems})");
-                    }
-                };
-
-                pdfExporter.ExportProgress += (sender, e) =>
-                {
-                    if (e.PercentComplete % 10 == 0 || e.PercentComplete == 100)
-                    {
-                        Console.Write($"\rGenerating PDF report... {e.PercentComplete}% ({e.ProcessedItems}/{e.TotalItems})");
-                    }
-                };
-
-                await htmlExporter.ExportAsync(scanResult);
-                Console.WriteLine();
-                _consoleUI.DisplaySuccess("HTML report generated successfully!");
-
-                await pdfExporter.ExportAsync(scanResult);
-                Console.WriteLine();
-                _consoleUI.DisplaySuccess("PDF report generated successfully!");
-
-                var outputFolder = GetOutputFolderPath(scanResult);
-                _consoleUI.DisplayInfo($"Reports saved to: {outputFolder}");
-                _consoleUI.DisplayInfo("Files created:");
-                _consoleUI.DisplayInfo("  - FolderScan_Report.html");
-                _consoleUI.DisplayInfo("  - FolderScan_Report.pdf");
-
-                return outputFolder;
-            }
-            catch (Exception ex)
-            {
-                _consoleUI!.DisplayError($"Export failed: {ex.Message}");
-                throw;
-            }
-        }
-
-        private static string GetOutputFolderPath(ScanResult scanResult)
-        {
-            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var folderName = GenerateOutputFolderName(scanResult, timestamp);
-            return Path.Combine(desktop, folderName);
-        }
-
-        private static string GenerateOutputFolderName(ScanResult scanResult, string timestamp)
-        {
-            if (scanResult.ScannedPaths.Count == 0)
-            {
-                return $"Unknown_Scan_{timestamp}";
-            }
-
-            if (scanResult.ScannedPaths.Count > 1)
-            {
-                return $"Multi_Scan_{timestamp}";
-            }
-
-            var path = scanResult.ScannedPaths[0];
-
-            if (path.Length >= 2 && path[1] == ':')
-            {
-                var driveLetter = path[0].ToString().ToUpper();
-                return $"{driveLetter}_Drive_Scan_{timestamp}";
-            }
-
-            var folderName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            if (string.IsNullOrEmpty(folderName))
-            {
-                folderName = path.Replace(":", "").Replace("\\", "_").Replace("/", "_");
-                if (string.IsNullOrEmpty(folderName))
-                {
-                    folderName = "Root";
-                }
-            }
-
-            var sanitizedName = string.Join("_", folderName.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
-            return $"{sanitizedName}_Scan_{timestamp}";
-        }
 
         private static async Task HandlePostScanOptions(ScanResult scanResult, string exportPath)
         {

@@ -267,6 +267,91 @@ namespace FolderVision.Ui
             }
         }
 
+        public void ShowReportGeneration(string reportType, int progress = 0, string outputFolder = "")
+        {
+            lock (_lockObject)
+            {
+                ClearPreviousDisplay();
+
+                var output = new StringBuilder();
+                var lineCount = 0;
+
+                SetConsoleColor(ConsoleColor.Cyan);
+                output.AppendLine("=== GENERATING REPORTS ===");
+                lineCount++;
+
+                ResetConsoleColor();
+                SetConsoleColor(ConsoleColor.Green);
+                output.AppendLine("✓ Scan completed");
+                lineCount++;
+
+                ResetConsoleColor();
+                if (reportType.Contains("HTML"))
+                {
+                    if (progress >= 100 && reportType.Contains("completed"))
+                    {
+                        SetConsoleColor(ConsoleColor.Green);
+                        output.AppendLine("✓ HTML report completed");
+                    }
+                    else
+                    {
+                        SetConsoleColor(ConsoleColor.Yellow);
+                        output.AppendLine("⏳ Creating HTML report...");
+                    }
+                    ResetConsoleColor();
+                    lineCount++;
+                }
+
+                if (reportType.Contains("PDF"))
+                {
+                    if (progress >= 100 && reportType.Contains("completed"))
+                    {
+                        SetConsoleColor(ConsoleColor.Green);
+                        output.AppendLine("✓ PDF report completed");
+                    }
+                    else
+                    {
+                        SetConsoleColor(ConsoleColor.Yellow);
+                        output.AppendLine("⏳ Creating PDF report...");
+                    }
+                    ResetConsoleColor();
+                    lineCount++;
+                }
+
+                if (!string.IsNullOrEmpty(outputFolder))
+                {
+                    SetConsoleColor(ConsoleColor.Green);
+                    output.AppendLine($"✓ Reports saved to: {outputFolder}");
+                    ResetConsoleColor();
+                    lineCount++;
+                }
+
+                Console.Write(output.ToString());
+                _lastDisplayLines = lineCount;
+                _isDisplaying = true;
+            }
+        }
+
+        public void CompleteReportGeneration(string outputFolder)
+        {
+            lock (_lockObject)
+            {
+                ClearPreviousDisplay();
+
+                SetConsoleColor(ConsoleColor.Cyan);
+                Console.WriteLine("=== GENERATING REPORTS ===");
+                SetConsoleColor(ConsoleColor.Green);
+                Console.WriteLine("✓ Scan completed");
+                Console.WriteLine("✓ HTML report completed");
+                Console.WriteLine("✓ PDF report completed");
+                Console.WriteLine($"✓ Reports saved to: {outputFolder}");
+                ResetConsoleColor();
+                Console.WriteLine();
+
+                _isDisplaying = false;
+            }
+        }
+
         public void StartProgress(string initialMessage = "Starting...")
         {
             lock (_lockObject)
