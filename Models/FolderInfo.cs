@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FolderVision.Models
 {
@@ -8,71 +9,65 @@ namespace FolderVision.Models
         public FolderInfo()
         {
             SubFolders = new List<FolderInfo>();
-            Files = new List<FileInfo>();
         }
 
-        public string Name { get; set; } = string.Empty;
+        public FolderInfo(string fullPath) : this()
+        {
+            FullPath = fullPath;
+            Name = System.IO.Path.GetFileName(fullPath) ?? string.Empty;
+        }
+
         public string FullPath { get; set; } = string.Empty;
-        public FolderInfo? Parent { get; set; }
-        public List<FolderInfo> SubFolders { get; set; }
-        public List<FileInfo> Files { get; set; }
-        public long Size { get; set; }
-        public int FileCount { get; set; }
+        public string Name { get; set; } = string.Empty;
         public int SubFolderCount { get; set; }
+        public int FileCount { get; set; }
+        public List<FolderInfo> SubFolders { get; set; }
         public DateTime LastModified { get; set; }
-        public DateTime Created { get; set; }
-        public int Depth { get; set; }
 
         public void AddSubFolder(FolderInfo subFolder)
         {
-            throw new NotImplementedException();
+            if (subFolder != null && !SubFolders.Contains(subFolder))
+            {
+                SubFolders.Add(subFolder);
+                UpdateCounts();
+            }
         }
 
-        public void AddFile(FileInfo file)
+        public void UpdateCounts()
         {
-            throw new NotImplementedException();
+            SubFolderCount = SubFolders.Count;
         }
 
-        public void CalculateSize()
+        public void SetFileCount(int fileCount)
         {
-            throw new NotImplementedException();
-        }
-
-        public void CalculateCounts()
-        {
-            throw new NotImplementedException();
-        }
-
-        public string GetFormattedSize()
-        {
-            throw new NotImplementedException();
+            FileCount = fileCount;
         }
 
         public IEnumerable<FolderInfo> GetAllSubFolders()
         {
-            throw new NotImplementedException();
+            foreach (var subFolder in SubFolders)
+            {
+                yield return subFolder;
+                foreach (var nestedFolder in subFolder.GetAllSubFolders())
+                {
+                    yield return nestedFolder;
+                }
+            }
         }
 
-        public IEnumerable<FileInfo> GetAllFiles()
+        public int GetTotalSubFolderCount()
         {
-            throw new NotImplementedException();
+            return SubFolders.Sum(sf => 1 + sf.GetTotalSubFolderCount());
         }
-    }
 
-    public class FileInfo
-    {
-        public string Name { get; set; } = string.Empty;
-        public string FullPath { get; set; } = string.Empty;
-        public string Extension { get; set; } = string.Empty;
-        public long Size { get; set; }
-        public DateTime LastModified { get; set; }
-        public DateTime Created { get; set; }
-        public bool IsReadOnly { get; set; }
-        public bool IsHidden { get; set; }
-
-        public string GetFormattedSize()
+        public int GetTotalFileCount()
         {
-            throw new NotImplementedException();
+            return FileCount + SubFolders.Sum(sf => sf.GetTotalFileCount());
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} ({SubFolderCount} folders, {FileCount} files)";
         }
     }
 }

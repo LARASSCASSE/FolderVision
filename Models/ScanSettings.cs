@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace FolderVision.Models
 {
@@ -7,59 +9,87 @@ namespace FolderVision.Models
     {
         public ScanSettings()
         {
-            ExcludedFolders = new List<string>();
-            ExcludedExtensions = new List<string>();
-            IncludedExtensions = new List<string>();
+            PathsToScan = new List<string>();
+            MaxThreads = 4;
         }
 
-        public int MaxDepth { get; set; } = int.MaxValue;
-        public bool IncludeHiddenFiles { get; set; } = false;
-        public bool IncludeSystemFiles { get; set; } = false;
-        public bool FollowSymlinks { get; set; } = false;
-        public int MaxThreads { get; set; } = Environment.ProcessorCount;
-        public long MaxFileSize { get; set; } = long.MaxValue;
-        public long MinFileSize { get; set; } = 0;
-        public List<string> ExcludedFolders { get; set; }
-        public List<string> ExcludedExtensions { get; set; }
-        public List<string> IncludedExtensions { get; set; }
-        public bool UseProgressReporting { get; set; } = true;
-        public TimeSpan ScanTimeout { get; set; } = TimeSpan.FromHours(1);
+        public List<string> PathsToScan { get; set; }
+        public bool SkipSystemFolders { get; set; }
+        public bool SkipHiddenFolders { get; set; }
+        public int MaxThreads { get; set; }
 
-        public void AddExcludedFolder(string folderPath)
+        public void AddPathToScan(string path)
         {
-            throw new NotImplementedException();
+            if (!string.IsNullOrEmpty(path) && Directory.Exists(path) && !PathsToScan.Contains(path))
+            {
+                PathsToScan.Add(path);
+            }
         }
 
-        public void AddExcludedExtension(string extension)
+        public void RemovePathToScan(string path)
         {
-            throw new NotImplementedException();
+            if (!string.IsNullOrEmpty(path))
+            {
+                PathsToScan.Remove(path);
+            }
         }
 
-        public void AddIncludedExtension(string extension)
+        public void ClearPaths()
         {
-            throw new NotImplementedException();
+            PathsToScan.Clear();
         }
 
-        public void RemoveExcludedFolder(string folderPath)
+        public bool ShouldSkipFolder(string folderPath)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(folderPath))
+                return true;
+
+            var folderName = Path.GetFileName(folderPath);
+            var attributes = File.GetAttributes(folderPath);
+
+            if (SkipHiddenFolders && (attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                return true;
+
+            if (SkipSystemFolders && (attributes & FileAttributes.System) == FileAttributes.System)
+                return true;
+
+            return false;
         }
 
-        public void RemoveExcludedExtension(string extension)
+        public bool HasValidPaths()
         {
-            throw new NotImplementedException();
+            return PathsToScan.Any(path => Directory.Exists(path));
         }
 
-        public bool ShouldExcludeFolder(string folderPath)
+        public void ValidatePaths()
         {
-            throw new NotImplementedException();
+            PathsToScan = PathsToScan.Where(path => Directory.Exists(path)).ToList();
         }
 
-        public bool ShouldExcludeFile(string filePath, long fileSize)
+        public static ScanSettings CreateDefault()
         {
-            throw new NotImplementedException();
+            return new ScanSettings
+            {
+                SkipSystemFolders = true,
+                SkipHiddenFolders = true,
+                MaxThreads = 4
+            };
         }
 
-        public static ScanSettings Default => new ScanSettings();
+        public ScanSettings Clone()
+        {
+            return new ScanSettings
+            {
+                PathsToScan = new List<string>(PathsToScan),
+                SkipSystemFolders = SkipSystemFolders,
+                SkipHiddenFolders = SkipHiddenFolders,
+                MaxThreads = MaxThreads
+            };
+        }
+
+        public override string ToString()
+        {
+            return $"ScanSettings: {PathsToScan.Count} paths, MaxThreads={MaxThreads}, SkipSystem={SkipSystemFolders}, SkipHidden={SkipHiddenFolders}";
+        }
     }
 }
