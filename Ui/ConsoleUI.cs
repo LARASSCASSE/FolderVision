@@ -226,9 +226,35 @@ namespace FolderVision.Ui
         {
             try
             {
-                return DriveInfo.GetDrives()
-                    .Where(d => d.IsReady && (d.DriveType == DriveType.Fixed || d.DriveType == DriveType.Removable))
-                    .ToList();
+                var drives = DriveInfo.GetDrives().Where(d => d.IsReady).ToList();
+                var validDrives = new List<DriveInfo>();
+
+                foreach (var drive in drives)
+                {
+                    try
+                    {
+                        // Test if we can access the drive
+                        var testAccess = drive.RootDirectory.Exists;
+                        var driveSize = drive.TotalSize; // This will throw if drive is not accessible
+
+                        // Include all drive types but warn about network drives
+                        validDrives.Add(drive);
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        DisplayWarning($"Access denied to drive {drive.Name} - skipping");
+                    }
+                    catch (IOException)
+                    {
+                        DisplayWarning($"I/O error accessing drive {drive.Name} - skipping");
+                    }
+                    catch (Exception ex)
+                    {
+                        DisplayWarning($"Error accessing drive {drive.Name}: {ex.Message} - skipping");
+                    }
+                }
+
+                return validDrives;
             }
             catch (Exception ex)
             {
@@ -250,15 +276,50 @@ namespace FolderVision.Ui
                     var totalSize = FormatFileSize(drive.TotalSize);
                     var freeSpace = FormatFileSize(drive.AvailableFreeSpace);
                     var usedSpace = FormatFileSize(drive.TotalSize - drive.AvailableFreeSpace);
-                    var percentUsed = (double)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize * 100;
+                    var percentUsed = drive.TotalSize > 0 ? (double)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize * 100 : 0;
 
-                    Console.WriteLine($"{i + 1,2}. {drive.Name,-4} [{drive.DriveType,-10}] {drive.VolumeLabel}");
-                    Console.WriteLine($"     Total: {totalSize,-10} Used: {usedSpace,-10} Free: {freeSpace,-10} ({percentUsed:F1}% used)");
+                    var driveTypeWarning = "";
+                    if (drive.DriveType == DriveType.Network)
+                        driveTypeWarning = " ⚠️ Network";
+                    else if (drive.DriveType == DriveType.CDRom)
+                        driveTypeWarning = " 💿 CD/DVD";
+                    else if (drive.DriveType == DriveType.Removable)
+                        driveTypeWarning = " 💾 Removable";
+
+                    Console.WriteLine($"{i + 1,2}. {drive.Name,-4} [{drive.DriveType,-10}] {drive.VolumeLabel}{driveTypeWarning}");
+
+                    if (drive.TotalSize == 0)
+                    {
+                        SetConsoleColor(ConsoleColor.Yellow);
+                        Console.WriteLine($"     ⚠️ Empty or inaccessible drive");
+                        ResetConsoleColor();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"     Total: {totalSize,-10} Used: {usedSpace,-10} Free: {freeSpace,-10} ({percentUsed:F1}% used)");
+
+                        if (drive.DriveType == DriveType.Network)
+                        {
+                            SetConsoleColor(ConsoleColor.Yellow);
+                            Console.WriteLine($"     ⚠️ Network drive - scanning may be slow");
+                            ResetConsoleColor();
+                        }
+                    }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"{i + 1,2}. {drive.Name,-4} [{drive.DriveType,-10}] (Error reading drive info)");
+                    SetConsoleColor(ConsoleColor.Red);
+                    Console.WriteLine($"{i + 1,2}. {drive.Name,-4} [{drive.DriveType,-10}] ❌ Error: {ex.Message}");
+                    ResetConsoleColor();
                 }
+                Console.WriteLine();
+            }
+
+            if (drives.Any(d => d.DriveType == DriveType.Network))
+            {
+                SetConsoleColor(ConsoleColor.Yellow);
+                Console.WriteLine("💡 Tip: Network drives may scan slowly. Consider using specific folder paths instead.");
+                ResetConsoleColor();
                 Console.WriteLine();
             }
         }

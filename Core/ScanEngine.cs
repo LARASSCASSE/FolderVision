@@ -204,22 +204,63 @@ namespace FolderVision.Core
                     }
                 }, cancellationToken);
 
-                var semaphore = new SemaphoreSlim(settings.MaxThreads, settings.MaxThreads);
-                var tasks = new List<Task>();
-
-                foreach (var subdir in subdirectories)
+                // Optimize for large directory structures
+                if (subdirectories.Length > 100)
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
-
-                    tasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken));
+                    // Process in batches for very large directories
+                    await ProcessSubdirectoriesInBatches(folderInfo, subdirectories, settings, cancellationToken);
                 }
+                else
+                {
+                    // Standard parallel processing for smaller directories
+                    var semaphore = new SemaphoreSlim(settings.MaxThreads, settings.MaxThreads);
+                    var tasks = new List<Task>();
 
-                await Task.WhenAll(tasks);
+                    foreach (var subdir in subdirectories)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                            break;
+
+                        tasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken));
+                    }
+
+                    await Task.WhenAll(tasks);
+                }
             }
             catch (Exception ex)
             {
                 LogError($"Error scanning subdirectories in {directoryInfo.FullName}: {ex.Message}");
+            }
+        }
+
+        private async Task ProcessSubdirectoriesInBatches(FolderInfo folderInfo, DirectoryInfo[] subdirectories, ScanSettings settings, CancellationToken cancellationToken)
+        {
+            const int batchSize = 50; // Process 50 directories at a time
+            var semaphore = new SemaphoreSlim(Math.Min(settings.MaxThreads, 8), Math.Min(settings.MaxThreads, 8)); // Limit concurrency for large batches
+
+            for (int i = 0; i < subdirectories.Length; i += batchSize)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                var batch = subdirectories.Skip(i).Take(batchSize);
+                var batchTasks = new List<Task>();
+
+                foreach (var subdir in batch)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+
+                    batchTasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken));
+                }
+
+                await Task.WhenAll(batchTasks);
+
+                // Allow GC to collect completed tasks and reduce memory pressure
+                if (i % (batchSize * 4) == 0) // Every 4 batches
+                {
+                    GC.Collect(0, GCCollectionMode.Optimized);
+                }
             }
         }
 
