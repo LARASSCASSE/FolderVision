@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FolderVision.Core;
 using FolderVision.Models;
 using FolderVision.Exporters;
+using FolderVision.Utils;
 
 namespace FolderVision.Ui
 {
@@ -561,43 +562,8 @@ namespace FolderVision.Ui
         public string GetOutputFolderPath(ScanResult scanResult)
         {
             var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var folderName = GenerateOutputFolderName(scanResult, timestamp);
+            var folderName = FileHelper.CreateScanFolderName(scanResult.ScannedPaths);
             return Path.Combine(desktop, folderName);
-        }
-
-        private string GenerateOutputFolderName(ScanResult scanResult, string timestamp)
-        {
-            if (scanResult.ScannedPaths.Count == 0)
-            {
-                return $"Unknown_Scan_{timestamp}";
-            }
-
-            if (scanResult.ScannedPaths.Count > 1)
-            {
-                return $"Multi_Scan_{timestamp}";
-            }
-
-            var path = scanResult.ScannedPaths[0];
-
-            if (path.Length >= 2 && path[1] == ':')
-            {
-                var driveLetter = path[0].ToString().ToUpper();
-                return $"{driveLetter}_Drive_Scan_{timestamp}";
-            }
-
-            var folderName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            if (string.IsNullOrEmpty(folderName))
-            {
-                folderName = path.Replace(":", "").Replace("\\", "_").Replace("/", "_");
-                if (string.IsNullOrEmpty(folderName))
-                {
-                    folderName = "Root";
-                }
-            }
-
-            var sanitizedName = string.Join("_", folderName.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
-            return $"{sanitizedName}_Scan_{timestamp}";
         }
 
         private void OpenFolder(string folderPath)
