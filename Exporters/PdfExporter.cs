@@ -30,20 +30,62 @@ namespace FolderVision.Exporters
         {
             if (string.IsNullOrEmpty(outputPath))
             {
-                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var folderName = scanResult.RootFolders.FirstOrDefault()?.Name ?? "Unknown";
-                if (folderName.Contains(':'))
-                {
-                    folderName = folderName.Replace(":", "").Replace("\\", "");
-                }
-                outputPath = Path.Combine(desktop, $"FolderScan_{timestamp}_{folderName}.pdf");
+                outputPath = GenerateOrganizedOutputPath(scanResult, "FolderScan_Report.pdf");
+            }
+
+            var outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
             }
 
             _totalItems = scanResult.GetAllFolders().Count();
             _currentItem = 0;
 
             await Task.Run(() => GeneratePdf(scanResult, outputPath));
+        }
+
+        private static string GenerateOrganizedOutputPath(ScanResult scanResult, string fileName)
+        {
+            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var folderName = GenerateOutputFolderName(scanResult, timestamp);
+            var outputFolder = Path.Combine(desktop, folderName);
+            return Path.Combine(outputFolder, fileName);
+        }
+
+        private static string GenerateOutputFolderName(ScanResult scanResult, string timestamp)
+        {
+            if (scanResult.ScannedPaths.Count == 0)
+            {
+                return $"Unknown_Scan_{timestamp}";
+            }
+
+            if (scanResult.ScannedPaths.Count > 1)
+            {
+                return $"Multi_Scan_{timestamp}";
+            }
+
+            var path = scanResult.ScannedPaths[0];
+
+            if (path.Length >= 2 && path[1] == ':')
+            {
+                var driveLetter = path[0].ToString().ToUpper();
+                return $"{driveLetter}_Drive_Scan_{timestamp}";
+            }
+
+            var folderName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(folderName))
+            {
+                folderName = path.Replace(":", "").Replace("\\", "_").Replace("/", "_");
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = "Root";
+                }
+            }
+
+            var sanitizedName = string.Join("_", folderName.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
+            return $"{sanitizedName}_Scan_{timestamp}";
         }
 
         private void GeneratePdf(ScanResult scanResult, string outputPath)
