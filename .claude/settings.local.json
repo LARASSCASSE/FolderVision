@@ -6,7 +6,8 @@
       "Bash(dotnet --version)",
       "Bash(dotnet run:*)",
       "Bash(chmod:*)",
-      "Bash(./simulate-startup.sh:*)"
+      "Bash(./simulate-startup.sh:*)",
+      "Bash(dotnet add package:*)"
     ],
     "deny": [],
     "ask": []

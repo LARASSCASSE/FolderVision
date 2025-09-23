@@ -57,4 +57,8 @@
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="iText7" Version="8.0.5" />
+  </ItemGroup>
+
 </Project>
