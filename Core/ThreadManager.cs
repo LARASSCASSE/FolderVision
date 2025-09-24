@@ -20,9 +20,9 @@ namespace FolderVision.Core
         private int _activeTasks;
         private bool _disposed;
 
-        public ThreadManager(int maxConcurrency = Environment.ProcessorCount)
+        public ThreadManager(int maxConcurrency = 0)
         {
-            _maxConcurrency = Math.Max(1, maxConcurrency);
+            _maxConcurrency = Math.Max(1, maxConcurrency == 0 ? Environment.ProcessorCount : maxConcurrency);
             _semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
             _taskQueue = new ConcurrentQueue<Task>();
             _threadInfos = new ConcurrentDictionary<int, ThreadInfo>();
@@ -170,7 +170,7 @@ namespace FolderVision.Core
         {
             var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
             var results = new List<T>();
-            var executingTasks = new List<Task>();
+            var executingTasks = new List<Task<T>>();
 
             foreach (var task in tasks)
             {

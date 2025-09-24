@@ -1,0 +1,19 @@
+{
+  "runtimeOptions": {
+    "tfm": "net9.0",
+    "includedFrameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "9.0.9"
+      }
+    ],
+    "configProperties": {
+      "System.GC.Concurrent": true,
+      "System.GC.Server": true,
+      "System.GC.RetainVM": true,
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+      "System.Threading.ThreadPool.MinThreads": 4,
+      "System.Threading.ThreadPool.MaxThreads": 32
+    }
+  }
+}

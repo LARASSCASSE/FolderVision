@@ -433,7 +433,7 @@ namespace FolderVision.Ui
             return settings;
         }
 
-        private void ShowSettings()
+        public void ShowSettings()
         {
             Clear();
             SetConsoleColor(ConsoleColor.Magenta);

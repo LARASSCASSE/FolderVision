@@ -1,0 +1,6 @@
+D:\Projects\FolderVision\obj\Debug\net6.0\win-x64\FolderVision.csproj.AssemblyReference.cache
+D:\Projects\FolderVision\obj\Debug\net6.0\win-x64\FolderVision.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\FolderVision\obj\Debug\net6.0\win-x64\FolderVision.AssemblyInfoInputs.cache
+D:\Projects\FolderVision\obj\Debug\net6.0\win-x64\FolderVision.AssemblyInfo.cs
+D:\Projects\FolderVision\obj\Debug\net6.0\win-x64\FolderVision.csproj.CoreCompileInputs.cache
+D:\Projects\FolderVision\obj\Debug\net6.0\win-x64\FolderVision.sourcelink.json

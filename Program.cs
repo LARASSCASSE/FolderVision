@@ -32,6 +32,15 @@ namespace FolderVision
                     return;
                 }
 
+                // Direct scan test mode
+                if (args.Length > 0 && args[0] == "--scan-test")
+                {
+                    string testPath = args.Length > 1 ? args[1] : "./test_scan_folder";
+                    var success = await TestDirectScan.TestScanAndExport(Path.GetFullPath(testPath));
+                    Environment.ExitCode = success ? 0 : 1;
+                    return;
+                }
+
                 await RunApplicationAsync();
             }
             catch (Exception ex)
@@ -84,8 +93,8 @@ namespace FolderVision
                             var driveResult = await PerformDriveScanAsync();
                             if (driveResult != null)
                             {
-                                lastScanResult = driveResult.scanResult;
-                                lastExportPath = driveResult.exportPath;
+                                lastScanResult = driveResult.Value.scanResult;
+                                lastExportPath = driveResult.Value.exportPath;
                                 await HandlePostScanOptions(lastScanResult, lastExportPath);
                             }
                             break;
@@ -94,8 +103,8 @@ namespace FolderVision
                             var folderResult = await PerformFolderScanAsync();
                             if (folderResult != null)
                             {
-                                lastScanResult = folderResult.scanResult;
-                                lastExportPath = folderResult.exportPath;
+                                lastScanResult = folderResult.Value.scanResult;
+                                lastExportPath = folderResult.Value.exportPath;
                                 await HandlePostScanOptions(lastScanResult, lastExportPath);
                             }
                             break;
@@ -287,7 +296,7 @@ namespace FolderVision
                         UseShellExecute = true
                     });
                 }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.MacOS))
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     Process.Start("open", filePath);
                 }

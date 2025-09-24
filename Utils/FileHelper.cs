@@ -43,7 +43,7 @@ namespace FolderVision.Utils
             throw new NotImplementedException();
         }
 
-        public static async Task<bool> IsAccessibleAsync(string path)
+        public static Task<bool> IsAccessibleAsync(string path)
         {
             throw new NotImplementedException();
         }

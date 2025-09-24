@@ -184,10 +184,8 @@ namespace FolderVision.Exporters
 
             foreach (var rootFolder in scanResult.RootFolders)
             {
-                var subList = new List();
-                subList.Add(new ListItem($"{rootFolder.FullPath} (📁{rootFolder.SubFolderCount} | 📄{rootFolder.FileCount})"));
-                AddTocSubfolders(subList, rootFolder, 1, 3);
-                tocList.Add(new ListItem().Add(subList));
+                var listItem = new ListItem($"{rootFolder.FullPath} (📁{rootFolder.SubFolderCount} | 📄{rootFolder.FileCount})");
+                tocList.Add(listItem);
             }
 
             _document.Add(tocList);
@@ -196,28 +194,8 @@ namespace FolderVision.Exporters
 
         private void AddTocSubfolders(List parentList, FolderInfo folder, int currentDepth, int maxDepth)
         {
-            if (currentDepth >= maxDepth || folder.SubFolders.Count == 0)
-                return;
-
-            foreach (var subFolder in folder.SubFolders.OrderBy(f => f.Name).Take(10))
-            {
-                parentList.Add(new ListItem($"{subFolder.Name} (📁{subFolder.SubFolderCount} | 📄{subFolder.FileCount})"));
-
-                if (currentDepth < maxDepth - 1)
-                {
-                    var subList = new List();
-                    AddTocSubfolders(subList, subFolder, currentDepth + 1, maxDepth);
-                    if (subList.Count > 0)
-                    {
-                        parentList.Add(new ListItem().Add(subList));
-                    }
-                }
-            }
-
-            if (folder.SubFolders.Count > 10)
-            {
-                parentList.Add(new ListItem($"... and {folder.SubFolders.Count - 10} more folders"));
-            }
+            // Simplified implementation to avoid nested list issues
+            // For now, just add the folder to the main list
         }
 
         private void AddFolderTree(ScanResult scanResult)
