@@ -11,12 +11,14 @@ namespace FolderVision.Models
         {
             PathsToScan = new List<string>();
             MaxThreads = 4;
+            MaxDepth = 50; // Default safe depth limit
         }
 
         public List<string> PathsToScan { get; set; }
         public bool SkipSystemFolders { get; set; }
         public bool SkipHiddenFolders { get; set; }
         public int MaxThreads { get; set; }
+        public int MaxDepth { get; set; }
 
         public void AddPathToScan(string path)
         {
@@ -72,7 +74,8 @@ namespace FolderVision.Models
             {
                 SkipSystemFolders = true,
                 SkipHiddenFolders = true,
-                MaxThreads = 4
+                MaxThreads = 4,
+                MaxDepth = 50
             };
         }
 
@@ -83,13 +86,14 @@ namespace FolderVision.Models
                 PathsToScan = new List<string>(PathsToScan),
                 SkipSystemFolders = SkipSystemFolders,
                 SkipHiddenFolders = SkipHiddenFolders,
-                MaxThreads = MaxThreads
+                MaxThreads = MaxThreads,
+                MaxDepth = MaxDepth
             };
         }
 
         public override string ToString()
         {
-            return $"ScanSettings: {PathsToScan.Count} paths, MaxThreads={MaxThreads}, SkipSystem={SkipSystemFolders}, SkipHidden={SkipHiddenFolders}";
+            return $"ScanSettings: {PathsToScan.Count} paths, MaxThreads={MaxThreads}, MaxDepth={MaxDepth}, SkipSystem={SkipSystemFolders}, SkipHidden={SkipHiddenFolders}";
         }
     }
 }

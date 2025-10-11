@@ -71,10 +71,17 @@ namespace FolderVision.Core
             }
         }
 
-        public async Task<FolderInfo?> ScanDirectoryAsync(string path, ScanSettings settings, CancellationToken cancellationToken = default)
+        public async Task<FolderInfo?> ScanDirectoryAsync(string path, ScanSettings settings, CancellationToken cancellationToken = default, int currentDepth = 0)
         {
             if (cancellationToken.IsCancellationRequested)
                 return null;
+
+            // Check depth limit to prevent stack overflow
+            if (currentDepth >= settings.MaxDepth)
+            {
+                LogError($"Maximum depth reached ({settings.MaxDepth}) at: {path}");
+                return null;
+            }
 
             try
             {
@@ -95,7 +102,7 @@ namespace FolderVision.Core
                 await ScanFilesAsync(folderInfo, directoryInfo, settings, cancellationToken);
 
                 // Scan subdirectories
-                await ScanSubdirectoriesAsync(folderInfo, directoryInfo, settings, cancellationToken);
+                await ScanSubdirectoriesAsync(folderInfo, directoryInfo, settings, cancellationToken, currentDepth);
 
                 folderInfo.UpdateCounts();
                 return folderInfo;
@@ -183,7 +190,7 @@ namespace FolderVision.Core
             }
         }
 
-        private async Task ScanSubdirectoriesAsync(FolderInfo folderInfo, DirectoryInfo directoryInfo, ScanSettings settings, CancellationToken cancellationToken)
+        private async Task ScanSubdirectoriesAsync(FolderInfo folderInfo, DirectoryInfo directoryInfo, ScanSettings settings, CancellationToken cancellationToken, int currentDepth)
         {
             try
             {
@@ -209,7 +216,7 @@ namespace FolderVision.Core
                 if (subdirectories.Length > 100)
                 {
                     // Process in batches for very large directories
-                    await ProcessSubdirectoriesInBatches(folderInfo, subdirectories, settings, cancellationToken);
+                    await ProcessSubdirectoriesInBatches(folderInfo, subdirectories, settings, cancellationToken, currentDepth);
                 }
                 else
                 {
@@ -222,7 +229,7 @@ namespace FolderVision.Core
                         if (cancellationToken.IsCancellationRequested)
                             break;
 
-                        tasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken));
+                        tasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken, currentDepth));
                     }
 
                     await Task.WhenAll(tasks);
@@ -234,7 +241,7 @@ namespace FolderVision.Core
             }
         }
 
-        private async Task ProcessSubdirectoriesInBatches(FolderInfo folderInfo, DirectoryInfo[] subdirectories, ScanSettings settings, CancellationToken cancellationToken)
+        private async Task ProcessSubdirectoriesInBatches(FolderInfo folderInfo, DirectoryInfo[] subdirectories, ScanSettings settings, CancellationToken cancellationToken, int currentDepth)
         {
             const int batchSize = 50; // Process 50 directories at a time
             var semaphore = new SemaphoreSlim(Math.Min(settings.MaxThreads, 8), Math.Min(settings.MaxThreads, 8)); // Limit concurrency for large batches
@@ -252,7 +259,7 @@ namespace FolderVision.Core
                     if (cancellationToken.IsCancellationRequested)
                         break;
 
-                    batchTasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken));
+                    batchTasks.Add(ProcessSubdirectoryAsync(folderInfo, subdir, settings, semaphore, cancellationToken, currentDepth));
                 }
 
                 await Task.WhenAll(batchTasks);
@@ -265,12 +272,12 @@ namespace FolderVision.Core
             }
         }
 
-        private async Task ProcessSubdirectoryAsync(FolderInfo parentFolder, DirectoryInfo subdir, ScanSettings settings, SemaphoreSlim semaphore, CancellationToken cancellationToken)
+        private async Task ProcessSubdirectoryAsync(FolderInfo parentFolder, DirectoryInfo subdir, ScanSettings settings, SemaphoreSlim semaphore, CancellationToken cancellationToken, int currentDepth)
         {
             await semaphore.WaitAsync(cancellationToken);
             try
             {
-                var subFolderInfo = await ScanDirectoryAsync(subdir.FullName, settings, cancellationToken);
+                var subFolderInfo = await ScanDirectoryAsync(subdir.FullName, settings, cancellationToken, currentDepth + 1);
                 if (subFolderInfo != null)
                 {
                     lock (_lockObject)

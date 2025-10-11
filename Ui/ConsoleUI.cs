@@ -430,6 +430,14 @@ namespace FolderVision.Ui
             else if (systemInput == "n" || systemInput == "no")
                 settings.SkipSystemFolders = false;
 
+            // Max depth
+            Console.Write($"Maximum scan depth [{settings.MaxDepth}]: ");
+            var depthInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(depthInput, out int maxDepth) && maxDepth > 0)
+            {
+                settings.MaxDepth = maxDepth;
+            }
+
             return settings;
         }
 
@@ -442,6 +450,7 @@ namespace FolderVision.Ui
             Console.WriteLine();
             Console.WriteLine("Current default settings:");
             Console.WriteLine($"• Max Threads: {Environment.ProcessorCount}");
+            Console.WriteLine($"• Max Depth: 50");
             Console.WriteLine($"• Skip Hidden Folders: Yes");
             Console.WriteLine($"• Skip System Folders: Yes");
             Console.WriteLine();
