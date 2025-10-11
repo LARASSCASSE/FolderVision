@@ -438,6 +438,54 @@ namespace FolderVision.Ui
                 settings.MaxDepth = maxDepth;
             }
 
+            // Memory optimization
+            Console.Write($"Enable memory optimization? (y/n) [{(settings.EnableMemoryOptimization ? "y" : "n")}]: ");
+            var memOptInput = Console.ReadLine()?.Trim().ToLower();
+            if (memOptInput == "y" || memOptInput == "yes")
+                settings.EnableMemoryOptimization = true;
+            else if (memOptInput == "n" || memOptInput == "no")
+                settings.EnableMemoryOptimization = false;
+
+            // Max memory usage (only if optimization is enabled)
+            if (settings.EnableMemoryOptimization)
+            {
+                Console.Write($"Maximum memory usage (MB) [{settings.MaxMemoryUsageMB}]: ");
+                var memInput = Console.ReadLine()?.Trim();
+                if (long.TryParse(memInput, out long maxMemory) && maxMemory > 0)
+                {
+                    settings.MaxMemoryUsageMB = maxMemory;
+                }
+            }
+
+            Console.WriteLine();
+            SetConsoleColor(ConsoleColor.Yellow);
+            Console.WriteLine("═══ TIMEOUT SETTINGS ═══");
+            ResetConsoleColor();
+
+            // Global timeout
+            Console.Write($"Global scan timeout (minutes) [{settings.GlobalTimeout.TotalMinutes}]: ");
+            var globalTimeoutInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(globalTimeoutInput, out int globalMinutes) && globalMinutes > 0)
+            {
+                settings.GlobalTimeout = TimeSpan.FromMinutes(globalMinutes);
+            }
+
+            // Directory timeout
+            Console.Write($"Directory timeout (seconds) [{settings.DirectoryTimeout.TotalSeconds}]: ");
+            var dirTimeoutInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(dirTimeoutInput, out int dirSeconds) && dirSeconds > 0)
+            {
+                settings.DirectoryTimeout = TimeSpan.FromSeconds(dirSeconds);
+            }
+
+            // Network drive timeout
+            Console.Write($"Network drive timeout (seconds) [{settings.NetworkDriveTimeout.TotalSeconds}]: ");
+            var networkTimeoutInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(networkTimeoutInput, out int networkSeconds) && networkSeconds > 0)
+            {
+                settings.NetworkDriveTimeout = TimeSpan.FromSeconds(networkSeconds);
+            }
+
             return settings;
         }
 
@@ -451,6 +499,11 @@ namespace FolderVision.Ui
             Console.WriteLine("Current default settings:");
             Console.WriteLine($"• Max Threads: {Environment.ProcessorCount}");
             Console.WriteLine($"• Max Depth: 50");
+            Console.WriteLine($"• Memory Optimization: Enabled");
+            Console.WriteLine($"• Max Memory Usage: 512 MB");
+            Console.WriteLine($"• Global Timeout: 30 minutes");
+            Console.WriteLine($"• Directory Timeout: 10 seconds");
+            Console.WriteLine($"• Network Drive Timeout: 30 seconds");
             Console.WriteLine($"• Skip Hidden Folders: Yes");
             Console.WriteLine($"• Skip System Folders: Yes");
             Console.WriteLine();

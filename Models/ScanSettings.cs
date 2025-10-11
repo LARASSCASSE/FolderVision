@@ -12,6 +12,11 @@ namespace FolderVision.Models
             PathsToScan = new List<string>();
             MaxThreads = 4;
             MaxDepth = 50; // Default safe depth limit
+            MaxMemoryUsageMB = 512; // Default 512MB limit
+            EnableMemoryOptimization = true; // Enable by default
+            GlobalTimeout = TimeSpan.FromMinutes(30); // 30 minutes max total scan
+            DirectoryTimeout = TimeSpan.FromSeconds(10); // 10 seconds per directory
+            NetworkDriveTimeout = TimeSpan.FromSeconds(30); // 30 seconds for network drives
         }
 
         public List<string> PathsToScan { get; set; }
@@ -19,6 +24,11 @@ namespace FolderVision.Models
         public bool SkipHiddenFolders { get; set; }
         public int MaxThreads { get; set; }
         public int MaxDepth { get; set; }
+        public long MaxMemoryUsageMB { get; set; }
+        public bool EnableMemoryOptimization { get; set; }
+        public TimeSpan GlobalTimeout { get; set; }
+        public TimeSpan DirectoryTimeout { get; set; }
+        public TimeSpan NetworkDriveTimeout { get; set; }
 
         public void AddPathToScan(string path)
         {
@@ -75,7 +85,12 @@ namespace FolderVision.Models
                 SkipSystemFolders = true,
                 SkipHiddenFolders = true,
                 MaxThreads = 4,
-                MaxDepth = 50
+                MaxDepth = 50,
+                MaxMemoryUsageMB = 512,
+                EnableMemoryOptimization = true,
+                GlobalTimeout = TimeSpan.FromMinutes(30),
+                DirectoryTimeout = TimeSpan.FromSeconds(10),
+                NetworkDriveTimeout = TimeSpan.FromSeconds(30)
             };
         }
 
@@ -87,7 +102,12 @@ namespace FolderVision.Models
                 SkipSystemFolders = SkipSystemFolders,
                 SkipHiddenFolders = SkipHiddenFolders,
                 MaxThreads = MaxThreads,
-                MaxDepth = MaxDepth
+                MaxDepth = MaxDepth,
+                MaxMemoryUsageMB = MaxMemoryUsageMB,
+                EnableMemoryOptimization = EnableMemoryOptimization,
+                GlobalTimeout = GlobalTimeout,
+                DirectoryTimeout = DirectoryTimeout,
+                NetworkDriveTimeout = NetworkDriveTimeout
             };
         }
 

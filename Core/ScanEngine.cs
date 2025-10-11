@@ -6,6 +6,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using FolderVision.Models;
+using FolderVision.Utils;
 
 namespace FolderVision.Core
 {
@@ -16,6 +17,7 @@ namespace FolderVision.Core
         private long _processedDirectories;
         private long _totalDirectories;
         private readonly List<string> _errors;
+        private MemoryMonitor? _memoryMonitor;
 
         public ScanEngine()
         {
@@ -35,10 +37,13 @@ namespace FolderVision.Core
                 ScanStartTime = DateTime.Now
             };
 
-            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationTokenSource = new CancellationTokenSource(settings.GlobalTimeout);
             _processedDirectories = 0;
             _totalDirectories = 0;
             _errors.Clear();
+
+            // Initialize memory monitor
+            _memoryMonitor = new MemoryMonitor(settings.MaxMemoryUsageMB, settings.EnableMemoryOptimization);
 
             try
             {
@@ -83,29 +88,35 @@ namespace FolderVision.Core
                 return null;
             }
 
+            // Get timeout based on path type (network vs local)
+            var timeout = TimeoutHelper.GetTimeoutForPath(path, settings);
+
             try
             {
-                // Check if we should skip this folder
-                if (settings.ShouldSkipFolder(path))
-                    return null;
+                return await TimeoutHelper.ExecuteWithTimeout(async (timeoutToken) =>
+                {
+                    // Check if we should skip this folder
+                    if (settings.ShouldSkipFolder(path))
+                        return null;
 
-                var folderInfo = new FolderInfo(path);
+                    var folderInfo = new FolderInfo(path);
 
-                // Get directory info
-                var directoryInfo = new DirectoryInfo(path);
-                folderInfo.LastModified = directoryInfo.LastWriteTime;
+                    // Get directory info
+                    var directoryInfo = new DirectoryInfo(path);
+                    folderInfo.LastModified = directoryInfo.LastWriteTime;
 
-                // Report progress
-                ReportProgress(path);
+                    // Report progress
+                    ReportProgress(path);
 
-                // Scan files in current directory
-                await ScanFilesAsync(folderInfo, directoryInfo, settings, cancellationToken);
+                    // Scan files in current directory
+                    await ScanFilesAsync(folderInfo, directoryInfo, settings, timeoutToken);
 
-                // Scan subdirectories
-                await ScanSubdirectoriesAsync(folderInfo, directoryInfo, settings, cancellationToken, currentDepth);
+                    // Scan subdirectories
+                    await ScanSubdirectoriesAsync(folderInfo, directoryInfo, settings, timeoutToken, currentDepth);
 
-                folderInfo.UpdateCounts();
-                return folderInfo;
+                    folderInfo.UpdateCounts();
+                    return folderInfo;
+                }, timeout, cancellationToken);
             }
             catch (UnauthorizedAccessException)
             {
@@ -130,6 +141,11 @@ namespace FolderVision.Core
             catch (SecurityException)
             {
                 LogError($"Security error accessing: {path}");
+                return null;
+            }
+            catch (TimeoutException)
+            {
+                LogError($"Timeout ({timeout.TotalSeconds}s) in {path}");
                 return null;
             }
             catch (Exception ex)
@@ -267,7 +283,7 @@ namespace FolderVision.Core
                 // Allow GC to collect completed tasks and reduce memory pressure
                 if (i % (batchSize * 4) == 0) // Every 4 batches
                 {
-                    GC.Collect(0, GCCollectionMode.Optimized);
+                    _memoryMonitor?.ForceCleanupIfNeeded();
                 }
             }
         }
@@ -348,6 +364,21 @@ namespace FolderVision.Core
             lock (_lockObject)
             {
                 _processedDirectories++;
+
+                // Check memory usage and cleanup if needed
+                if (_memoryMonitor != null)
+                {
+                    if (_memoryMonitor.ShouldTriggerGC((int)_processedDirectories, 500))
+                    {
+                        _memoryMonitor.ForceCleanupIfNeeded();
+                    }
+
+                    if (_memoryMonitor.IsMemoryLimitExceeded())
+                    {
+                        LogError($"Memory limit exceeded ({_memoryMonitor.GetMemoryInfo()}) at: {currentPath}");
+                        _cancellationTokenSource?.Cancel();
+                    }
+                }
 
                 var percentComplete = _totalDirectories > 0
                     ? (int)((_processedDirectories * 100) / _totalDirectories)
