@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,6 +7,8 @@ namespace FolderVision.Models
 {
     public class ScanResult
     {
+        private readonly object _lockObject = new object();
+
         public ScanResult()
         {
             RootFolders = new List<FolderInfo>();
@@ -21,25 +24,34 @@ namespace FolderVision.Models
 
         public void AddRootFolder(FolderInfo folder)
         {
-            if (folder != null && !RootFolders.Contains(folder))
+            lock (_lockObject)
             {
-                RootFolders.Add(folder);
-                UpdateTotals();
+                if (folder != null && !RootFolders.Contains(folder))
+                {
+                    RootFolders.Add(folder);
+                    UpdateTotals();
+                }
             }
         }
 
         public void AddScannedPath(string path)
         {
-            if (!string.IsNullOrEmpty(path) && !ScannedPaths.Contains(path))
+            lock (_lockObject)
             {
-                ScannedPaths.Add(path);
+                if (!string.IsNullOrEmpty(path) && !ScannedPaths.Contains(path))
+                {
+                    ScannedPaths.Add(path);
+                }
             }
         }
 
         public void UpdateTotals()
         {
-            TotalFolders = RootFolders.Sum(rf => 1 + rf.GetTotalSubFolderCount());
-            TotalFiles = RootFolders.Sum(rf => rf.GetTotalFileCount());
+            lock (_lockObject)
+            {
+                TotalFolders = RootFolders.Sum(rf => 1 + rf.GetTotalSubFolderCount());
+                TotalFiles = RootFolders.Sum(rf => rf.GetTotalFileCount());
+            }
         }
 
         public void SetScanDuration(DateTime endTime)
@@ -94,7 +106,10 @@ namespace FolderVision.Models
 
         public override string ToString()
         {
-            return $"Scan Result: {TotalFolders} folders, {TotalFiles} files in {ScanDuration.TotalSeconds:F1}s";
+            lock (_lockObject)
+            {
+                return $"Scan Result: {TotalFolders} folders, {TotalFiles} files in {ScanDuration.TotalSeconds:F1}s";
+            }
         }
     }
 }

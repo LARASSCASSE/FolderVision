@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,7 +41,10 @@ namespace FolderVision.Core
             _cancellationTokenSource = new CancellationTokenSource(settings.GlobalTimeout);
             _processedDirectories = 0;
             _totalDirectories = 0;
-            _errors.Clear();
+            lock (_lockObject)
+            {
+                _errors.Clear();
+            }
 
             // Initialize memory monitor
             _memoryMonitor = new MemoryMonitor(settings.MaxMemoryUsageMB, settings.EnableMemoryOptimization);

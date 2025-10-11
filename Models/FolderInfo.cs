@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,6 +7,8 @@ namespace FolderVision.Models
 {
     public class FolderInfo
     {
+        private readonly object _lockObject = new object();
+
         public FolderInfo()
         {
             SubFolders = new List<FolderInfo>();
@@ -26,21 +29,30 @@ namespace FolderVision.Models
 
         public void AddSubFolder(FolderInfo subFolder)
         {
-            if (subFolder != null && !SubFolders.Contains(subFolder))
+            lock (_lockObject)
             {
-                SubFolders.Add(subFolder);
-                UpdateCounts();
+                if (subFolder != null && !SubFolders.Contains(subFolder))
+                {
+                    SubFolders.Add(subFolder);
+                    UpdateCounts();
+                }
             }
         }
 
         public void UpdateCounts()
         {
-            SubFolderCount = SubFolders.Count;
+            lock (_lockObject)
+            {
+                SubFolderCount = SubFolders.Count;
+            }
         }
 
         public void SetFileCount(int fileCount)
         {
-            FileCount = fileCount;
+            lock (_lockObject)
+            {
+                FileCount = fileCount;
+            }
         }
 
         public IEnumerable<FolderInfo> GetAllSubFolders()
@@ -57,17 +69,26 @@ namespace FolderVision.Models
 
         public int GetTotalSubFolderCount()
         {
-            return SubFolders.Sum(sf => 1 + sf.GetTotalSubFolderCount());
+            lock (_lockObject)
+            {
+                return SubFolders.Sum(sf => 1 + sf.GetTotalSubFolderCount());
+            }
         }
 
         public int GetTotalFileCount()
         {
-            return FileCount + SubFolders.Sum(sf => sf.GetTotalFileCount());
+            lock (_lockObject)
+            {
+                return FileCount + SubFolders.Sum(sf => sf.GetTotalFileCount());
+            }
         }
 
         public override string ToString()
         {
-            return $"{Name} ({SubFolderCount} folders, {FileCount} files)";
+            lock (_lockObject)
+            {
+                return $"{Name} ({SubFolderCount} folders, {FileCount} files)";
+            }
         }
     }
 }
