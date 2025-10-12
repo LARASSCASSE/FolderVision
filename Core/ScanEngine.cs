@@ -397,6 +397,9 @@ namespace FolderVision.Core
             {
                 _errors.Add(message);
             }
+
+            // Trigger event for external monitoring
+            ErrorOccurred?.Invoke(this, message);
         }
 
         public void CancelScan()
