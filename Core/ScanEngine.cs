@@ -16,13 +16,15 @@ namespace FolderVision.Core
         private CancellationTokenSource? _cancellationTokenSource;
         private readonly object _lockObject = new object();
         private long _processedDirectories;
-        private long _totalDirectories;
+        private long _estimatedDirectories;
         private readonly List<string> _errors;
         private MemoryMonitor? _memoryMonitor;
+        private bool _useProgressiveEstimation;
 
         public ScanEngine()
         {
             _errors = new List<string>();
+            _useProgressiveEstimation = true; // Enable progressive estimation by default
         }
 
         public async Task<ScanResult> ScanFolderAsync(string folderPath, ScanSettings settings)
@@ -40,7 +42,7 @@ namespace FolderVision.Core
 
             _cancellationTokenSource = new CancellationTokenSource(settings.GlobalTimeout);
             _processedDirectories = 0;
-            _totalDirectories = 0;
+            _estimatedDirectories = 1; // Start with 1 for the root directory
             lock (_lockObject)
             {
                 _errors.Clear();
@@ -51,10 +53,7 @@ namespace FolderVision.Core
 
             try
             {
-                // First pass: estimate total directories for progress reporting
-                await EstimateDirectoryCountAsync(folderPath, settings, _cancellationTokenSource.Token);
-
-                // Second pass: actual scanning
+                // Single pass: scan with progressive estimation
                 var rootFolder = await ScanDirectoryAsync(folderPath, settings, _cancellationTokenSource.Token);
 
                 if (rootFolder != null)
@@ -62,6 +61,9 @@ namespace FolderVision.Core
                     scanResult.AddRootFolder(rootFolder);
                     scanResult.AddScannedPath(folderPath);
                 }
+
+                // Finalize progress reporting
+                FinalizeProgress();
 
                 scanResult.SetScanDuration(DateTime.Now);
                 ScanCompleted?.Invoke(this, scanResult);
@@ -109,14 +111,17 @@ namespace FolderVision.Core
                     var directoryInfo = new DirectoryInfo(path);
                     folderInfo.LastModified = directoryInfo.LastWriteTime;
 
-                    // Report progress
-                    ReportProgress(path);
+                    // Get subdirectories for progressive estimation
+                    var subdirectories = await GetSubdirectoriesAsync(directoryInfo, timeoutToken);
+
+                    // Report progress with discovered subdirectory count
+                    ReportProgress(path, subdirectories.Length);
 
                     // Scan files in current directory
                     await ScanFilesAsync(folderInfo, directoryInfo, settings, timeoutToken);
 
-                    // Scan subdirectories
-                    await ScanSubdirectoriesAsync(folderInfo, directoryInfo, settings, timeoutToken, currentDepth);
+                    // Scan subdirectories using already-retrieved list
+                    await ScanSubdirectoriesAsync(folderInfo, subdirectories, settings, timeoutToken, currentDepth);
 
                     folderInfo.UpdateCounts();
                     return folderInfo;
@@ -210,11 +215,11 @@ namespace FolderVision.Core
             }
         }
 
-        private async Task ScanSubdirectoriesAsync(FolderInfo folderInfo, DirectoryInfo directoryInfo, ScanSettings settings, CancellationToken cancellationToken, int currentDepth)
+        private async Task<DirectoryInfo[]> GetSubdirectoriesAsync(DirectoryInfo directoryInfo, CancellationToken cancellationToken)
         {
             try
             {
-                var subdirectories = await Task.Run(() =>
+                return await Task.Run(() =>
                 {
                     try
                     {
@@ -231,6 +236,17 @@ namespace FolderVision.Core
                         return Array.Empty<DirectoryInfo>();
                     }
                 }, cancellationToken);
+            }
+            catch (Exception)
+            {
+                return Array.Empty<DirectoryInfo>();
+            }
+        }
+
+        private async Task ScanSubdirectoriesAsync(FolderInfo folderInfo, DirectoryInfo[] subdirectories, ScanSettings settings, CancellationToken cancellationToken, int currentDepth)
+        {
+            try
+            {
 
                 // Optimize for large directory structures
                 if (subdirectories.Length > 100)
@@ -257,7 +273,7 @@ namespace FolderVision.Core
             }
             catch (Exception ex)
             {
-                LogError($"Error scanning subdirectories in {directoryInfo.FullName}: {ex.Message}");
+                LogError($"Error scanning subdirectories: {ex.Message}");
             }
         }
 
@@ -312,67 +328,38 @@ namespace FolderVision.Core
             }
         }
 
-        private async Task EstimateDirectoryCountAsync(string path, ScanSettings settings, CancellationToken cancellationToken)
+        public void FinalizeProgress()
         {
-            try
+            // Set progress to 100% when scan is complete
+            var args = new ProgressEventArgs
             {
-                _totalDirectories = await Task.Run(() => EstimateDirectoryCountRecursive(path, settings, cancellationToken), cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                LogError($"Error estimating directory count: {ex.Message}");
-                _totalDirectories = 1; // Fallback to prevent division by zero
-            }
+                PercentComplete = 100,
+                CurrentPath = "Scan completed",
+                ProcessedFiles = _processedDirectories,
+                TotalFiles = _estimatedDirectories
+            };
+
+            ProgressChanged?.Invoke(this, args);
         }
 
-        private long EstimateDirectoryCountRecursive(string path, ScanSettings settings, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return 0;
-
-            try
-            {
-                if (settings.ShouldSkipFolder(path))
-                    return 0;
-
-                long count = 1; // Count current directory
-
-                var directoryInfo = new DirectoryInfo(path);
-                var subdirectories = directoryInfo.GetDirectories();
-
-                foreach (var subdir in subdirectories)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
-
-                    try
-                    {
-                        count += EstimateDirectoryCountRecursive(subdir.FullName, settings, cancellationToken);
-                    }
-                    catch (Exception)
-                    {
-                        // Skip directories we can't access during estimation
-                    }
-                }
-
-                return count;
-            }
-            catch (Exception)
-            {
-                return 1; // Return 1 for the current directory even if we can't scan subdirectories
-            }
-        }
-
-        private void ReportProgress(string currentPath)
+        private void ReportProgress(string currentPath, int subdirectoriesCount = 0)
         {
             lock (_lockObject)
             {
                 _processedDirectories++;
 
+                // Progressive estimation: update total based on discoveries
+                if (_useProgressiveEstimation && subdirectoriesCount > 0)
+                {
+                    // Add newly discovered subdirectories to our estimate
+                    _estimatedDirectories += subdirectoriesCount;
+                }
+
                 // Check memory usage and cleanup if needed
                 if (_memoryMonitor != null)
                 {
-                    if (_memoryMonitor.ShouldTriggerGC((int)_processedDirectories, 500))
+                    // Only trigger cleanup when actually needed, not on fixed intervals
+                    if (_memoryMonitor.ShouldTriggerCleanup((int)_processedDirectories, 500))
                     {
                         _memoryMonitor.ForceCleanupIfNeeded();
                     }
@@ -384,16 +371,20 @@ namespace FolderVision.Core
                     }
                 }
 
-                var percentComplete = _totalDirectories > 0
-                    ? (int)((_processedDirectories * 100) / _totalDirectories)
+                // Calculate progress with progressive estimation
+                var percentComplete = _estimatedDirectories > 0
+                    ? (int)((_processedDirectories * 100) / _estimatedDirectories)
                     : 0;
+
+                // Cap at 95% until scan is complete to show ongoing work
+                percentComplete = Math.Min(percentComplete, 95);
 
                 var args = new ProgressEventArgs
                 {
-                    PercentComplete = Math.Min(percentComplete, 100),
+                    PercentComplete = percentComplete,
                     CurrentPath = currentPath,
                     ProcessedFiles = _processedDirectories,
-                    TotalFiles = _totalDirectories
+                    TotalFiles = _estimatedDirectories
                 };
 
                 ProgressChanged?.Invoke(this, args);
