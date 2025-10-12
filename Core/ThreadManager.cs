@@ -76,7 +76,7 @@ namespace FolderVision.Core
                 // Aggregate results
                 foreach (var result in results.Where(r => r?.ScanResult != null))
                 {
-                    if (result.ScanResult.RootFolders.Any())
+                    if (result.ScanResult?.RootFolders.Any() == true)
                     {
                         foreach (var rootFolder in result.ScanResult.RootFolders)
                         {
@@ -84,9 +84,12 @@ namespace FolderVision.Core
                         }
                     }
 
-                    foreach (var scannedPath in result.ScanResult.ScannedPaths)
+                    if (result.ScanResult?.ScannedPaths != null)
                     {
-                        aggregatedResult.AddScannedPath(scannedPath);
+                        foreach (var scannedPath in result.ScanResult.ScannedPaths)
+                        {
+                            aggregatedResult.AddScannedPath(scannedPath);
+                        }
                     }
                 }
 

@@ -19,9 +19,13 @@ namespace FolderVision.Exporters
     {
         private int _currentItem = 0;
         private int _totalItems = 0;
-        private PdfFont _regularFont;
-        private PdfFont _boldFont;
-        private Document _document;
+        private PdfFont? _regularFont;
+        private PdfFont? _boldFont;
+        private Document? _document;
+
+        private PdfFont RegularFont => _regularFont ?? throw new InvalidOperationException("PDF fonts not initialized");
+        private PdfFont BoldFont => _boldFont ?? throw new InvalidOperationException("PDF fonts not initialized");
+        private Document Document => _document ?? throw new InvalidOperationException("PDF document not initialized");
 
         public PdfExporter()
         {
@@ -63,15 +67,15 @@ namespace FolderVision.Exporters
             _regularFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
             _boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
 
-            _document.SetFont(_regularFont);
-            _document.SetFontSize(10);
+            Document.SetFont(RegularFont);
+            Document.SetFontSize(10);
 
             AddHeader(scanResult);
             AddSummary(scanResult);
             AddTableOfContents(scanResult);
             AddFolderTree(scanResult);
 
-            _document.Close();
+            Document.Close();
         }
 
         private void AddHeader(ScanResult scanResult)
@@ -81,14 +85,14 @@ namespace FolderVision.Exporters
             headerTable.SetBorder(Border.NO_BORDER);
 
             var titleCell = new Cell().Add(new Paragraph("📁 Folder Scan Report")
-                .SetFont(_boldFont)
+                .SetFont(BoldFont)
                 .SetFontSize(24)
                 .SetFontColor(ColorConstants.DARK_GRAY));
             titleCell.SetBorder(Border.NO_BORDER);
             titleCell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
 
             var dateCell = new Cell().Add(new Paragraph($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
-                .SetFont(_regularFont)
+                .SetFont(RegularFont)
                 .SetFontSize(10)
                 .SetTextAlignment(TextAlignment.RIGHT));
             dateCell.SetBorder(Border.NO_BORDER);
@@ -97,7 +101,7 @@ namespace FolderVision.Exporters
             headerTable.AddCell(titleCell);
             headerTable.AddCell(dateCell);
 
-            _document.Add(headerTable);
+            Document.Add(headerTable);
 
             var infoTable = new Table(3, true);
             infoTable.SetWidth(UnitValue.CreatePercentValue(100));
@@ -108,20 +112,20 @@ namespace FolderVision.Exporters
             AddInfoRow(infoTable, "Duration:", $"{scanResult.ScanDuration.TotalSeconds:F2} seconds");
             AddInfoRow(infoTable, "Scanned Paths:", string.Join(", ", scanResult.ScannedPaths));
 
-            _document.Add(infoTable);
-            _document.Add(new AreaBreak());
+            Document.Add(infoTable);
+            Document.Add(new AreaBreak());
         }
 
         private void AddInfoRow(Table table, string label, string value)
         {
             table.AddCell(new Cell().Add(new Paragraph(label)
-                .SetFont(_boldFont)
+                .SetFont(BoldFont)
                 .SetFontSize(10))
                 .SetBorder(Border.NO_BORDER)
                 .SetPadding(2));
 
             table.AddCell(new Cell().Add(new Paragraph(value)
-                .SetFont(_regularFont)
+                .SetFont(RegularFont)
                 .SetFontSize(10))
                 .SetBorder(Border.NO_BORDER)
                 .SetPadding(2));
@@ -132,8 +136,8 @@ namespace FolderVision.Exporters
 
         private void AddSummary(ScanResult scanResult)
         {
-            _document.Add(new Paragraph("📊 Scan Statistics")
-                .SetFont(_boldFont)
+            Document.Add(new Paragraph("📊 Scan Statistics")
+                .SetFont(BoldFont)
                 .SetFontSize(18)
                 .SetMarginBottom(15));
 
@@ -145,7 +149,7 @@ namespace FolderVision.Exporters
             AddStatCard(statsTable, "📄 Total Files", $"{scanResult.TotalFiles:N0}");
             AddStatCard(statsTable, "⏱️ Scan Duration", $"{scanResult.ScanDuration.TotalSeconds:F1}s");
 
-            _document.Add(statsTable);
+            Document.Add(statsTable);
         }
 
         private void AddStatCard(Table table, string label, string value)
@@ -157,12 +161,12 @@ namespace FolderVision.Exporters
             cell.SetTextAlignment(TextAlignment.CENTER);
 
             cell.Add(new Paragraph(label)
-                .SetFont(_boldFont)
+                .SetFont(BoldFont)
                 .SetFontSize(12)
                 .SetMarginBottom(5));
 
             cell.Add(new Paragraph(value)
-                .SetFont(_boldFont)
+                .SetFont(BoldFont)
                 .SetFontSize(16)
                 .SetFontColor(new DeviceRgb(0.4f, 0.49f, 0.92f)));
 
@@ -171,8 +175,8 @@ namespace FolderVision.Exporters
 
         private void AddTableOfContents(ScanResult scanResult)
         {
-            _document.Add(new Paragraph("📋 Table of Contents")
-                .SetFont(_boldFont)
+            Document.Add(new Paragraph("📋 Table of Contents")
+                .SetFont(BoldFont)
                 .SetFontSize(18)
                 .SetMarginBottom(15));
 
@@ -188,8 +192,8 @@ namespace FolderVision.Exporters
                 tocList.Add(listItem);
             }
 
-            _document.Add(tocList);
-            _document.Add(new AreaBreak());
+            Document.Add(tocList);
+            Document.Add(new AreaBreak());
         }
 
         private void AddTocSubfolders(List parentList, FolderInfo folder, int currentDepth, int maxDepth)
@@ -200,8 +204,8 @@ namespace FolderVision.Exporters
 
         private void AddFolderTree(ScanResult scanResult)
         {
-            _document.Add(new Paragraph("🌳 Folder Structure")
-                .SetFont(_boldFont)
+            Document.Add(new Paragraph("🌳 Folder Structure")
+                .SetFont(BoldFont)
                 .SetFontSize(18)
                 .SetMarginBottom(15));
 
@@ -220,7 +224,7 @@ namespace FolderVision.Exporters
             var folderText = $"{indent}📁 {displayName} (📁{folder.SubFolderCount} | 📄{folder.FileCount})";
 
             var paragraph = new Paragraph(folderText)
-                .SetFont(depth == 0 ? _boldFont : _regularFont)
+                .SetFont(depth == 0 ? BoldFont : RegularFont)
                 .SetFontSize(depth == 0 ? 12 : 10)
                 .SetMarginBottom(2);
 
@@ -229,7 +233,7 @@ namespace FolderVision.Exporters
                 paragraph.SetMarginLeft(depth * 10);
             }
 
-            _document.Add(paragraph);
+            Document.Add(paragraph);
 
             if (folder.SubFolders.Count > 0 && depth < 5)
             {
@@ -241,8 +245,8 @@ namespace FolderVision.Exporters
             else if (folder.SubFolders.Count > 0)
             {
                 var moreText = $"{new string(' ', (depth + 1) * 4)}... {folder.SubFolders.Count} subfolders (max depth reached)";
-                _document.Add(new Paragraph(moreText)
-                    .SetFont(_regularFont)
+                Document.Add(new Paragraph(moreText)
+                    .SetFont(RegularFont)
                     .SetFontSize(9)
                     .SetFontColor(ColorConstants.GRAY)
                     .SetMarginLeft((depth + 1) * 10)
