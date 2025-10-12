@@ -32,6 +32,13 @@ namespace FolderVision
                     return;
                 }
 
+                // Platform test mode
+                if (args.Length > 0 && args[0] == "--platform-test")
+                {
+                    TestPlatform.TestPlatformHelper();
+                    return;
+                }
+
                 // Direct scan test mode
                 if (args.Length > 0 && args[0] == "--scan-test")
                 {

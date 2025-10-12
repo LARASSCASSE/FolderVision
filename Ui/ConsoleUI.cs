@@ -71,6 +71,9 @@ namespace FolderVision.Ui
                             ShowSettings();
                             break;
                         case "4":
+                            DisplayInfo("Previous scan results feature not yet implemented.");
+                            break;
+                        case "5":
                             DisplayInfo("Goodbye!");
                             return;
                         default:
@@ -78,7 +81,7 @@ namespace FolderVision.Ui
                             break;
                     }
 
-                    if (choice != "4")
+                    if (choice != "5")
                     {
                         DisplayInfo("Press any key to continue...");
                         Console.ReadKey();
@@ -113,7 +116,7 @@ namespace FolderVision.Ui
             Console.WriteLine("═══ MAIN MENU ═══");
             ResetConsoleColor();
             Console.WriteLine();
-            Console.WriteLine("1. Scan Drives");
+            Console.WriteLine($"1. {PlatformHelper.Terminology.ScanDrivesMenuTitle}");
             Console.WriteLine("2. Scan Custom Folders");
             Console.WriteLine("3. Settings");
             Console.WriteLine("4. View Previous Scan Results");
@@ -132,7 +135,7 @@ namespace FolderVision.Ui
         {
             Clear();
             SetConsoleColor(ConsoleColor.Green);
-            Console.WriteLine("═══ DRIVE SCANNER ═══");
+            Console.WriteLine($"═══ {PlatformHelper.Terminology.ScanDrivesMenuTitle.ToUpper().Replace("SCAN ", "")} SCANNER ═══");
             ResetConsoleColor();
             Console.WriteLine();
 
@@ -276,7 +279,7 @@ namespace FolderVision.Ui
 
         private void DisplayDrives(List<DriveInfo> drives)
         {
-            Console.WriteLine("Available Drives:");
+            Console.WriteLine(PlatformHelper.Terminology.AvailableStorageTitle);
             Console.WriteLine("═════════════════");
 
             for (int i = 0; i < drives.Count; i++)
@@ -289,15 +292,17 @@ namespace FolderVision.Ui
                     var usedSpace = FormatFileSize(drive.TotalSize - drive.AvailableFreeSpace);
                     var percentUsed = drive.TotalSize > 0 ? (double)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize * 100 : 0;
 
-                    var driveTypeWarning = "";
-                    if (drive.DriveType == DriveType.Network)
-                        driveTypeWarning = " ⚠️ Network";
-                    else if (drive.DriveType == DriveType.CDRom)
-                        driveTypeWarning = " 💿 CD/DVD";
-                    else if (drive.DriveType == DriveType.Removable)
-                        driveTypeWarning = " 💾 Removable";
+                    var driveTypeDescription = PlatformHelper.GetDriveTypeDescription(drive.DriveType);
+                    var driveSymbol = drive.DriveType switch
+                    {
+                        DriveType.Network => PlatformHelper.Symbols.NetworkSymbol,
+                        DriveType.CDRom => PlatformHelper.Symbols.OpticalSymbol,
+                        DriveType.Removable => PlatformHelper.Symbols.RemovableSymbol,
+                        DriveType.Fixed => PlatformHelper.Symbols.DriveSymbol,
+                        _ => PlatformHelper.Symbols.SystemSymbol
+                    };
 
-                    Console.WriteLine($"{i + 1,2}. {drive.Name,-4} [{drive.DriveType,-10}] {drive.VolumeLabel}{driveTypeWarning}");
+                    Console.WriteLine($"{i + 1,2}. {drive.Name,-4} [{driveTypeDescription,-15}] {driveSymbol} {drive.VolumeLabel}");
 
                     if (drive.TotalSize == 0)
                     {
@@ -312,7 +317,7 @@ namespace FolderVision.Ui
                         if (drive.DriveType == DriveType.Network)
                         {
                             SetConsoleColor(ConsoleColor.Yellow);
-                            Console.WriteLine($"     ⚠️ Network drive - scanning may be slow");
+                            Console.WriteLine($"     ⚠️ {PlatformHelper.Terminology.NetworkStorageTerm} - scanning may be slow");
                             ResetConsoleColor();
                         }
                     }
@@ -329,7 +334,7 @@ namespace FolderVision.Ui
             if (drives.Any(d => d.DriveType == DriveType.Network))
             {
                 SetConsoleColor(ConsoleColor.Yellow);
-                Console.WriteLine("💡 Tip: Network drives may scan slowly. Consider using specific folder paths instead.");
+                Console.WriteLine($"💡 Tip: {PlatformHelper.Terminology.NetworkStorageTerm}s may scan slowly. Consider using specific {PlatformHelper.Terminology.FolderOrDirectoryTerm} paths instead.");
                 ResetConsoleColor();
                 Console.WriteLine();
             }
@@ -337,7 +342,7 @@ namespace FolderVision.Ui
 
         private List<DriveInfo> GetSelectedDrives(List<DriveInfo> drives)
         {
-            Console.WriteLine("Enter drive numbers to scan (e.g., 1,3,4) or 'all' for all drives:");
+            Console.WriteLine($"Enter {PlatformHelper.Terminology.DriveOrVolumeTerm} numbers to scan (e.g., 1,3,4) or 'all' for all {PlatformHelper.Terminology.DriveOrVolumeTerm}s:");
             Console.Write("Selection: ");
 
             var input = Console.ReadLine()?.Trim().ToLower() ?? "";
@@ -364,16 +369,18 @@ namespace FolderVision.Ui
         {
             var folders = new List<string>();
 
-            Console.WriteLine("Enter folder paths to scan (one per line, empty line to finish):");
+            Console.WriteLine($"Enter {PlatformHelper.Terminology.FolderOrDirectoryTerm} paths to scan (one per line, empty line to finish):");
             Console.WriteLine("Examples:");
-            Console.WriteLine("  C:\\Users");
-            Console.WriteLine("  D:\\Projects");
-            Console.WriteLine("  /home/user/documents");
+            var platformExamples = PlatformHelper.PathExamples.GetCommonPaths();
+            foreach (var example in platformExamples)
+            {
+                Console.WriteLine($"  {example}");
+            }
             Console.WriteLine();
 
             while (true)
             {
-                Console.Write($"Folder {folders.Count + 1}: ");
+                Console.Write($"{char.ToUpper(PlatformHelper.Terminology.FolderOrDirectoryTerm[0])}{PlatformHelper.Terminology.FolderOrDirectoryTerm.Substring(1)} {folders.Count + 1}: ");
                 var input = Console.ReadLine()?.Trim() ?? "";
 
                 if (string.IsNullOrEmpty(input))
