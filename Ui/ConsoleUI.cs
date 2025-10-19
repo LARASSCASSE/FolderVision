@@ -23,6 +23,7 @@ namespace FolderVision.Ui
         private readonly ProgressDisplay _progressDisplay;
         private ThreadManager? _threadManager;
         private ProgressTracker? _progressTracker;
+        private static ScanSettings _defaultSettings = ScanSettings.CreateDefault();
 
         public ConsoleUI()
         {
@@ -195,6 +196,8 @@ namespace FolderVision.Ui
                 };
 
                 DisplayInfo($"Starting scan of {paths.Count} path(s) with {settings.MaxThreads} threads...");
+                Console.WriteLine($"Paths: {string.Join(", ", paths)}");
+                Console.WriteLine($"Settings: MaxDepth={settings.MaxDepth}, SkipHidden={settings.SkipHiddenFolders}, SkipSystem={settings.SkipSystemFolders}");
                 Console.WriteLine("Press ESC to cancel the scan.");
                 Console.WriteLine();
 
@@ -223,11 +226,48 @@ namespace FolderVision.Ui
                 var result = await scanTask;
 
                 _progressDisplay.CompleteScan();
+
+                // Validate that we actually got data from the scan
+                if (result == null || result.TotalFolders == 0 && result.TotalFiles == 0)
+                {
+                    DisplayError("Scan completed but no data was collected.");
+                    DisplayError("This may indicate:");
+                    DisplayError("  • Permissions issues accessing the path");
+                    DisplayError("  • MaxDepth limit was reached too early");
+                    DisplayError("  • All folders were skipped due to settings");
+                    DisplayError("  • Path is empty or inaccessible");
+
+                    // Check for specific errors
+                    var scanEngine = new ScanEngine();
+                    if (_threadManager != null)
+                    {
+                        var threadInfos = _threadManager.GetThreadInfos();
+                        foreach (var threadInfo in threadInfos.Values)
+                        {
+                            if (!string.IsNullOrEmpty(threadInfo.Error))
+                            {
+                                DisplayError($"  • Thread {threadInfo.ThreadId} error: {threadInfo.Error}");
+                            }
+                        }
+                    }
+
+                    Console.WriteLine("\nPress any key to continue...");
+                    Console.ReadKey();
+                    return null;
+                }
+
                 return result;
             }
             catch (Exception ex)
             {
                 DisplayError($"Scan failed: {ex.Message}");
+                DisplayError($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    DisplayError($"Inner exception: {ex.InnerException.Message}");
+                }
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
                 return null;
             }
             finally
@@ -406,7 +446,7 @@ namespace FolderVision.Ui
 
         public ScanSettings GetScanSettings()
         {
-            var settings = ScanSettings.CreateDefault();
+            var settings = _defaultSettings.Clone();
 
             Console.WriteLine();
             SetConsoleColor(ConsoleColor.Yellow);
@@ -498,23 +538,155 @@ namespace FolderVision.Ui
 
         public void ShowSettings()
         {
+            while (true)
+            {
+                Clear();
+                SetConsoleColor(ConsoleColor.Magenta);
+                Console.WriteLine("═══ DEFAULT SETTINGS ═══");
+                ResetConsoleColor();
+                Console.WriteLine();
+                Console.WriteLine("Current default settings (used for all new scans):");
+                Console.WriteLine();
+                Console.WriteLine($"• Max Threads: {_defaultSettings.MaxThreads}");
+                Console.WriteLine($"• Max Depth: {_defaultSettings.MaxDepth}");
+                Console.WriteLine($"• Memory Optimization: {(_defaultSettings.EnableMemoryOptimization ? "Enabled" : "Disabled")}");
+                Console.WriteLine($"• Max Memory Usage: {_defaultSettings.MaxMemoryUsageMB} MB");
+                Console.WriteLine($"• Global Timeout: {_defaultSettings.GlobalTimeout.TotalMinutes} minutes");
+                Console.WriteLine($"• Directory Timeout: {_defaultSettings.DirectoryTimeout.TotalSeconds} seconds");
+                Console.WriteLine($"• Network Drive Timeout: {_defaultSettings.NetworkDriveTimeout.TotalSeconds} seconds");
+                Console.WriteLine($"• Skip Hidden Folders: {(_defaultSettings.SkipHiddenFolders ? "Yes" : "No")}");
+                Console.WriteLine($"• Skip System Folders: {(_defaultSettings.SkipSystemFolders ? "Yes" : "No")}");
+                Console.WriteLine();
+                SetConsoleColor(ConsoleColor.Yellow);
+                Console.WriteLine("═══ OPTIONS ═══");
+                ResetConsoleColor();
+                Console.WriteLine();
+                Console.WriteLine("1. Modify default settings");
+                Console.WriteLine("2. Reset to factory defaults");
+                Console.WriteLine("3. Return to main menu");
+                Console.WriteLine();
+                Console.Write("Select option (1-3): ");
+
+                var choice = GetUserChoice();
+                switch (choice)
+                {
+                    case "1":
+                        ModifyDefaultSettings();
+                        break;
+                    case "2":
+                        ResetToFactoryDefaults();
+                        break;
+                    case "3":
+                        return;
+                    default:
+                        DisplayError("Invalid choice. Press any key to continue...");
+                        Console.ReadKey();
+                        break;
+                }
+            }
+        }
+
+        private void ModifyDefaultSettings()
+        {
             Clear();
-            SetConsoleColor(ConsoleColor.Magenta);
-            Console.WriteLine("═══ SETTINGS ═══");
+            SetConsoleColor(ConsoleColor.Cyan);
+            Console.WriteLine("═══ MODIFY DEFAULT SETTINGS ═══");
             ResetConsoleColor();
             Console.WriteLine();
-            Console.WriteLine("Current default settings:");
-            Console.WriteLine($"• Max Threads: {Environment.ProcessorCount}");
-            Console.WriteLine($"• Max Depth: 50");
-            Console.WriteLine($"• Memory Optimization: Enabled");
-            Console.WriteLine($"• Max Memory Usage: 512 MB");
-            Console.WriteLine($"• Global Timeout: 30 minutes");
-            Console.WriteLine($"• Directory Timeout: 10 seconds");
-            Console.WriteLine($"• Network Drive Timeout: 30 seconds");
-            Console.WriteLine($"• Skip Hidden Folders: Yes");
-            Console.WriteLine($"• Skip System Folders: Yes");
+
+            // Max threads
+            Console.Write($"Max concurrent threads [{_defaultSettings.MaxThreads}]: ");
+            var threadsInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(threadsInput, out int maxThreads) && maxThreads > 0)
+            {
+                _defaultSettings.MaxThreads = maxThreads;
+            }
+
+            // Skip hidden folders
+            Console.Write($"Skip hidden folders? (y/n) [{(_defaultSettings.SkipHiddenFolders ? "y" : "n")}]: ");
+            var hiddenInput = Console.ReadLine()?.Trim().ToLower();
+            if (hiddenInput == "y" || hiddenInput == "yes")
+                _defaultSettings.SkipHiddenFolders = true;
+            else if (hiddenInput == "n" || hiddenInput == "no")
+                _defaultSettings.SkipHiddenFolders = false;
+
+            // Skip system folders
+            Console.Write($"Skip system folders? (y/n) [{(_defaultSettings.SkipSystemFolders ? "y" : "n")}]: ");
+            var systemInput = Console.ReadLine()?.Trim().ToLower();
+            if (systemInput == "y" || systemInput == "yes")
+                _defaultSettings.SkipSystemFolders = true;
+            else if (systemInput == "n" || systemInput == "no")
+                _defaultSettings.SkipSystemFolders = false;
+
+            // Max depth
+            Console.Write($"Maximum scan depth [{_defaultSettings.MaxDepth}]: ");
+            var depthInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(depthInput, out int maxDepth) && maxDepth > 0)
+            {
+                _defaultSettings.MaxDepth = maxDepth;
+            }
+
+            // Memory optimization
+            Console.Write($"Enable memory optimization? (y/n) [{(_defaultSettings.EnableMemoryOptimization ? "y" : "n")}]: ");
+            var memOptInput = Console.ReadLine()?.Trim().ToLower();
+            if (memOptInput == "y" || memOptInput == "yes")
+                _defaultSettings.EnableMemoryOptimization = true;
+            else if (memOptInput == "n" || memOptInput == "no")
+                _defaultSettings.EnableMemoryOptimization = false;
+
+            // Max memory usage (only if optimization is enabled)
+            if (_defaultSettings.EnableMemoryOptimization)
+            {
+                Console.Write($"Maximum memory usage (MB) [{_defaultSettings.MaxMemoryUsageMB}]: ");
+                var memInput = Console.ReadLine()?.Trim();
+                if (long.TryParse(memInput, out long maxMemory) && maxMemory > 0)
+                {
+                    _defaultSettings.MaxMemoryUsageMB = maxMemory;
+                }
+            }
+
             Console.WriteLine();
-            Console.WriteLine("Settings are configured per scan.");
+            SetConsoleColor(ConsoleColor.Yellow);
+            Console.WriteLine("═══ TIMEOUT SETTINGS ═══");
+            ResetConsoleColor();
+
+            // Global timeout
+            Console.Write($"Global scan timeout (minutes) [{_defaultSettings.GlobalTimeout.TotalMinutes}]: ");
+            var globalTimeoutInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(globalTimeoutInput, out int globalMinutes) && globalMinutes > 0)
+            {
+                _defaultSettings.GlobalTimeout = TimeSpan.FromMinutes(globalMinutes);
+            }
+
+            // Directory timeout
+            Console.Write($"Directory timeout (seconds) [{_defaultSettings.DirectoryTimeout.TotalSeconds}]: ");
+            var dirTimeoutInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(dirTimeoutInput, out int dirSeconds) && dirSeconds > 0)
+            {
+                _defaultSettings.DirectoryTimeout = TimeSpan.FromSeconds(dirSeconds);
+            }
+
+            // Network drive timeout
+            Console.Write($"Network drive timeout (seconds) [{_defaultSettings.NetworkDriveTimeout.TotalSeconds}]: ");
+            var networkTimeoutInput = Console.ReadLine()?.Trim();
+            if (int.TryParse(networkTimeoutInput, out int networkSeconds) && networkSeconds > 0)
+            {
+                _defaultSettings.NetworkDriveTimeout = TimeSpan.FromSeconds(networkSeconds);
+            }
+
+            DisplaySuccess("Default settings updated successfully!");
+            Console.WriteLine();
+            Console.WriteLine("Press any key to return to settings menu...");
+            Console.ReadKey();
+        }
+
+        private void ResetToFactoryDefaults()
+        {
+            _defaultSettings = ScanSettings.CreateDefault();
+            DisplaySuccess("Settings reset to factory defaults!");
+            Console.WriteLine();
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey();
         }
 
         public async Task ExportResultsAsync(ScanResult result, ExportFormat format)

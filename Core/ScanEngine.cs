@@ -117,7 +117,7 @@ namespace FolderVision.Core
             // Check depth limit to prevent stack overflow
             if (currentDepth >= settings.MaxDepth)
             {
-                LogError($"Maximum depth reached ({settings.MaxDepth}) at: {path}");
+                LogError($"Maximum depth reached ({settings.MaxDepth}) at depth {currentDepth} for path: {path}");
                 return null;
             }
 

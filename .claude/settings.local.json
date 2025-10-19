@@ -40,7 +40,16 @@
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" sln add FolderVision.Tests/FolderVision.Tests.csproj)",
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" build FolderVision.sln --configuration Release)",
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" test FolderVision.Tests/FolderVision.Tests.csproj --configuration Release --verbosity normal)",
-      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" test FolderVision.Tests/FolderVision.Tests.csproj --configuration Release --verbosity minimal)"
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" test FolderVision.Tests/FolderVision.Tests.csproj --configuration Release --verbosity minimal)",
+      "Bash(for:*)",
+      "Bash(head:*)",
+      "Bash(done)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project /mnt/d/Projects/FolderVision/FolderVision.csproj)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" clean)",
+      "Bash(ls:*)",
+      "Bash(taskkill:*)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" publish /mnt/d/Projects/FolderVision/FolderVision.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o /mnt/d/Projects/FolderVision/FolderScanner_Release)"
     ],
     "deny": [],
     "ask": []

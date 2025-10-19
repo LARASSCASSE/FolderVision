@@ -41,84 +41,38 @@ namespace FolderVision.Ui
 
         private void RenderProgressDisplay(ProgressChangedEventArgs args, List<string> scanPaths)
         {
-            var output = new StringBuilder();
-            var lineCount = 0;
-
-            // Header
-            Console.SetCursorPosition(0, Console.CursorTop);
-            SetConsoleColor(ConsoleColor.Cyan);
-            output.AppendLine("=== SCANNING IN PROGRESS ===");
-            lineCount++;
-
-            // Drives/Paths being scanned
-            ResetConsoleColor();
+            // Simplified single-line progress display to avoid console manipulation errors
             var pathsDisplay = string.Join(", ", scanPaths.Select(p => GetPathDisplayName(p)));
-            if (pathsDisplay.Length > 60)
+            if (pathsDisplay.Length > 30)
             {
-                pathsDisplay = pathsDisplay.Substring(0, 57) + "...";
+                pathsDisplay = pathsDisplay.Substring(0, 27) + "...";
             }
-            output.AppendLine($"Drives: {pathsDisplay}");
-            lineCount++;
 
-            // Overall Progress Bar
             var progressBar = CreateProgressBar(args.PercentComplete);
-            output.AppendLine($"Overall Progress: {progressBar} {args.PercentComplete:F0}%");
-            lineCount++;
+            var output = $"Scanning {pathsDisplay} {progressBar} {args.PercentComplete:F0}% | {args.ProcessedItems:N0} items";
 
-            // Active Threads
-            output.AppendLine($"Active Threads: {args.ActiveThreads}/{args.TotalItems}");
-            lineCount++;
+            // Pad to clear previous text
+            var paddedOutput = output.PadRight(120);
+            Console.Write("\r" + paddedOutput);
 
-            // Thread details
-            var activeThreads = args.ThreadDetails
-                .Where(t => t.Status == ThreadProgressStatus.Running || t.Status == ThreadProgressStatus.Completed)
-                .OrderBy(t => t.ThreadId)
-                .Take(4)
-                .ToList();
-
-            for (int i = 0; i < activeThreads.Count; i++)
-            {
-                var thread = activeThreads[i];
-                var isLast = i == activeThreads.Count - 1;
-                var prefix = isLast ? "└──" : "├──";
-
-                var threadPath = GetThreadDisplayPath(thread.CurrentPath, scanPaths, thread.ThreadId);
-                var folderCount = GetEstimatedFolderCount(thread);
-
-                output.AppendLine($"{prefix} Thread {thread.ThreadId + 1}: {threadPath} ({folderCount:N0} folders)");
-                lineCount++;
-            }
-
-            // Summary stats
-            var totalFolders = args.ThreadDetails.Sum(t => EstimateProcessedFolders(t));
-            var totalFiles = args.ThreadDetails.Sum(t => EstimateProcessedFiles(t));
-            output.AppendLine($"Total Found: {totalFolders:N0} folders | {totalFiles:N0} files");
-            lineCount++;
-
-            // Time remaining
-            var timeRemaining = FormatTimeRemaining(args.EstimatedTimeRemaining);
-            output.AppendLine($"Estimated Time: {timeRemaining} remaining");
-            lineCount++;
-
-            Console.Write(output.ToString());
-            _lastDisplayLines = lineCount;
+            _lastDisplayLines = 1;
         }
 
         private void ClearPreviousDisplay()
         {
-            if (_lastDisplayLines > 0)
+            // Simplified: just clear the current line for simple, stable display
+            // No complex cursor manipulation to avoid console errors
+            if (_lastDisplayLines > 0 && _isDisplaying)
             {
-                // Move cursor up and clear lines
-                for (int i = 0; i < _lastDisplayLines; i++)
+                try
                 {
-                    Console.SetCursorPosition(0, Console.CursorTop);
-                    Console.Write(new string(' ', Console.WindowWidth - 1));
-                    if (i < _lastDisplayLines - 1)
-                    {
-                        Console.SetCursorPosition(0, Console.CursorTop - 1);
-                    }
+                    // Simple: just reset cursor to beginning of line
+                    Console.Write("\r");
                 }
-                Console.SetCursorPosition(0, Console.CursorTop - _lastDisplayLines + 1);
+                catch
+                {
+                    // If that fails, just continue
+                }
             }
         }
 
@@ -258,12 +212,14 @@ namespace FolderVision.Ui
         {
             lock (_lockObject)
             {
-                ClearPreviousDisplay();
+                // Clear progress line and show completion
+                Console.WriteLine(); // Move to new line
                 SetConsoleColor(ConsoleColor.Green);
-                Console.WriteLine("=== SCAN COMPLETED ===");
+                Console.WriteLine("✓ Scan completed successfully");
                 ResetConsoleColor();
                 Console.WriteLine();
                 _isDisplaying = false;
+                _lastDisplayLines = 0;
             }
         }
 

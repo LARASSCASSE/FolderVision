@@ -4,7 +4,7 @@
 [![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Professional Multi-Threaded Folder Scanner with HTML and PDF Export
+Multi-Threaded Folder Scanner with HTML and PDF Export
 
 Development of a Folder Analysis Application for Windows. This tool allows users to analyze and map the complete folder structure across one or multiple drives, whether used simultaneously or separately, and generates detailed reports.
 
@@ -19,16 +19,34 @@ Development of a Folder Analysis Application for Windows. This tool allows users
 
 ## Quick Start
 
-```bash
-# Clone repository
-git clone https://github.com/YOUR_USERNAME/FolderVision.git
-cd FolderVision
+### 🪟 Windows - Lancer l'application
 
-# Build
+**Option 1 - Exécutable déjà compilé (le plus simple):**
+```cmd
+cd FolderScanner_Release
+FolderVision.exe
+```
+ou double-cliquez sur `FolderVision.exe`
+
+**Option 2 - Compiler et lancer:**
+```cmd
+# Ouvrir PowerShell ou CMD dans le dossier FolderVision
+dotnet run
+```
+
+**Option 3 - Build Release puis lancer:**
+```cmd
 dotnet build -c Release
+cd bin\Release\net9.0\win-x64
+FolderVision.exe
+```
 
-# Run
-dotnet run -- --scan-folder "C:\\MyFolder"
+### 🐧 Linux / macOS
+
+```bash
+# Installer .NET 9
+# Puis lancer:
+dotnet run
 ```
 
 ## CI/CD

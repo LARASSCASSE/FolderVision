@@ -134,14 +134,37 @@ namespace FolderVision.Core
                 var scanResult = await scanEngine.ScanFolderAsync(path, settings);
 
                 result.ScanResult = scanResult;
-                result.IsSuccess = true;
                 result.Errors = scanEngine.GetErrors().ToList();
 
-                threadInfo.Status = ThreadStatus.Completed;
+                // Check if scan actually produced any data
+                if (scanResult == null || (scanResult.TotalFolders == 0 && scanResult.TotalFiles == 0))
+                {
+                    result.IsSuccess = false;
+                    var errorMsg = $"Scan produced no data for path: {path}. ";
+
+                    if (result.Errors.Any())
+                    {
+                        errorMsg += $"Errors: {string.Join(", ", result.Errors.Take(3))}";
+                    }
+                    else
+                    {
+                        errorMsg += "Check permissions, depth limits, or path accessibility.";
+                    }
+
+                    result.Error = errorMsg;
+                    threadInfo.Error = errorMsg;
+                    threadInfo.Status = ThreadStatus.Failed;
+                    progressTracker.FailThread(threadId, errorMsg);
+                }
+                else
+                {
+                    result.IsSuccess = true;
+                    threadInfo.Status = ThreadStatus.Completed;
+                    progressTracker.CompleteThread(threadId);
+                }
+
                 threadInfo.EndTime = DateTime.Now;
                 threadInfo.ProgressPercentage = 100;
-
-                progressTracker.CompleteThread(threadId);
 
                 return result;
             }

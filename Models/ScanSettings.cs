@@ -10,16 +10,16 @@ namespace FolderVision.Models
         public ScanSettings()
         {
             PathsToScan = new List<string>();
-            MaxThreads = 4;
-            MaxDepth = 50; // Default safe depth limit
-            MaxMemoryUsageMB = 512; // Default 512MB limit
-            EnableMemoryOptimization = true; // Enable by default
-            GlobalTimeout = TimeSpan.FromMinutes(30); // 30 minutes max total scan
-            DirectoryTimeout = TimeSpan.FromSeconds(10); // 10 seconds per directory
-            NetworkDriveTimeout = TimeSpan.FromSeconds(30); // 30 seconds for network drives
-            EnableAdaptiveBatching = true; // Enable adaptive batch sizing for large folders
-            MaxDirectoriesPerBatch = 100; // Default batch size (overridden by adaptive batching)
-            LoggingOptions = LoggingOptions.Default; // Default logging configuration
+            MaxThreads = 8;
+            MaxDepth = 500; // Increased for deep folder structures
+            MaxMemoryUsageMB = 2048; // 2GB limit
+            EnableMemoryOptimization = true;
+            GlobalTimeout = TimeSpan.FromHours(5); // 5 hours for full disk scans
+            DirectoryTimeout = TimeSpan.FromMinutes(2); // 2 min per directory
+            NetworkDriveTimeout = TimeSpan.FromMinutes(5); // 5 min for network
+            EnableAdaptiveBatching = true;
+            MaxDirectoriesPerBatch = 100;
+            LoggingOptions = LoggingOptions.Default;
         }
 
         public List<string> PathsToScan { get; set; }
@@ -75,6 +75,10 @@ namespace FolderVision.Models
             if (string.IsNullOrEmpty(folderPath))
                 return true;
 
+            // NEVER skip drive roots (C:\, D:\, etc.) - they are the scan targets
+            if (Path.GetPathRoot(folderPath) == folderPath)
+                return false;
+
             var folderName = Path.GetFileName(folderPath);
             var attributes = File.GetAttributes(folderPath);
 
@@ -103,13 +107,13 @@ namespace FolderVision.Models
             {
                 SkipSystemFolders = true,
                 SkipHiddenFolders = true,
-                MaxThreads = 4,
-                MaxDepth = 50,
-                MaxMemoryUsageMB = 512,
+                MaxThreads = 8,
+                MaxDepth = 500,
+                MaxMemoryUsageMB = 2048,
                 EnableMemoryOptimization = true,
-                GlobalTimeout = TimeSpan.FromMinutes(30),
-                DirectoryTimeout = TimeSpan.FromSeconds(10),
-                NetworkDriveTimeout = TimeSpan.FromSeconds(30),
+                GlobalTimeout = TimeSpan.FromHours(5),
+                DirectoryTimeout = TimeSpan.FromMinutes(2),
+                NetworkDriveTimeout = TimeSpan.FromMinutes(5),
                 EnableAdaptiveBatching = true,
                 MaxDirectoriesPerBatch = 100,
                 LoggingOptions = LoggingOptions.Default
