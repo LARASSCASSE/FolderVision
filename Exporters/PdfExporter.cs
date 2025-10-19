@@ -22,13 +22,19 @@ namespace FolderVision.Exporters
         private PdfFont? _regularFont;
         private PdfFont? _boldFont;
         private Document? _document;
+        private PdfExportOptions _options;
 
         private PdfFont RegularFont => _regularFont ?? throw new InvalidOperationException("PDF fonts not initialized");
         private PdfFont BoldFont => _boldFont ?? throw new InvalidOperationException("PDF fonts not initialized");
         private Document Document => _document ?? throw new InvalidOperationException("PDF document not initialized");
 
-        public PdfExporter()
+        public PdfExporter() : this(PdfExportOptions.Default)
         {
+        }
+
+        public PdfExporter(PdfExportOptions options)
+        {
+            _options = options ?? PdfExportOptions.Default;
         }
 
         public async Task ExportAsync(ScanResult scanResult, string outputPath = "")
@@ -68,12 +74,16 @@ namespace FolderVision.Exporters
             _boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
 
             Document.SetFont(RegularFont);
-            Document.SetFontSize(10);
+            Document.SetFontSize(_options.FontSize);
 
-            AddHeader(scanResult);
-            AddSummary(scanResult);
-            AddTableOfContents(scanResult);
-            AddFolderTree(scanResult);
+            if (_options.IncludeHeader)
+                AddHeader(scanResult);
+            if (_options.IncludeStatistics)
+                AddSummary(scanResult);
+            if (_options.IncludeTableOfContents)
+                AddTableOfContents(scanResult);
+            if (_options.IncludeFolderTree)
+                AddFolderTree(scanResult);
 
             Document.Close();
         }
@@ -84,7 +94,9 @@ namespace FolderVision.Exporters
             headerTable.SetWidth(UnitValue.CreatePercentValue(100));
             headerTable.SetBorder(Border.NO_BORDER);
 
-            var titleCell = new Cell().Add(new Paragraph("📁 Folder Scan Report")
+            var icon = _options.UseEmojis ? "📁 " : "";
+            var title = _options.CustomTitle ?? "Folder Scan Report";
+            var titleCell = new Cell().Add(new Paragraph($"{icon}{title}")
                 .SetFont(BoldFont)
                 .SetFontSize(24)
                 .SetFontColor(ColorConstants.DARK_GRAY));
@@ -136,7 +148,8 @@ namespace FolderVision.Exporters
 
         private void AddSummary(ScanResult scanResult)
         {
-            Document.Add(new Paragraph("📊 Scan Statistics")
+            var icon = _options.UseEmojis ? "📊 " : "";
+            Document.Add(new Paragraph($"{icon}Scan Statistics")
                 .SetFont(BoldFont)
                 .SetFontSize(18)
                 .SetMarginBottom(15));
@@ -165,17 +178,39 @@ namespace FolderVision.Exporters
                 .SetFontSize(12)
                 .SetMarginBottom(5));
 
+            var (primary, _, _) = ColorSchemeHelper.GetColors(_options.ColorScheme);
+            var color = ParseHexColor(primary);
+
             cell.Add(new Paragraph(value)
                 .SetFont(BoldFont)
                 .SetFontSize(16)
-                .SetFontColor(new DeviceRgb(0.4f, 0.49f, 0.92f)));
+                .SetFontColor(color));
 
             table.AddCell(cell);
         }
 
+        private DeviceRgb ParseHexColor(string hex)
+        {
+            hex = hex.TrimStart('#');
+            if (hex.Length != 6) return new DeviceRgb(0.4f, 0.49f, 0.92f); // Default color
+
+            try
+            {
+                var r = Convert.ToInt32(hex.Substring(0, 2), 16) / 255f;
+                var g = Convert.ToInt32(hex.Substring(2, 2), 16) / 255f;
+                var b = Convert.ToInt32(hex.Substring(4, 2), 16) / 255f;
+                return new DeviceRgb(r, g, b);
+            }
+            catch
+            {
+                return new DeviceRgb(0.4f, 0.49f, 0.92f); // Default color on error
+            }
+        }
+
         private void AddTableOfContents(ScanResult scanResult)
         {
-            Document.Add(new Paragraph("📋 Table of Contents")
+            var icon = _options.UseEmojis ? "📋 " : "";
+            Document.Add(new Paragraph($"{icon}Table of Contents")
                 .SetFont(BoldFont)
                 .SetFontSize(18)
                 .SetMarginBottom(15));
@@ -204,7 +239,8 @@ namespace FolderVision.Exporters
 
         private void AddFolderTree(ScanResult scanResult)
         {
-            Document.Add(new Paragraph("🌳 Folder Structure")
+            var icon = _options.UseEmojis ? "🌳 " : "";
+            Document.Add(new Paragraph($"{icon}Folder Structure")
                 .SetFont(BoldFont)
                 .SetFontSize(18)
                 .SetMarginBottom(15));
@@ -219,9 +255,20 @@ namespace FolderVision.Exporters
         {
             ReportProgress(folder.Name);
 
+            // Check max depth limit
+            if (_options.MaxTreeDepth > 0 && depth >= _options.MaxTreeDepth)
+            {
+                return;
+            }
+
             var indent = new string(' ', depth * 4);
             var displayName = isRoot ? folder.FullPath : folder.Name;
-            var folderText = $"{indent}📁 {displayName} (📁{folder.SubFolderCount} | 📄{folder.FileCount})";
+            var folderIcon = _options.UseEmojis ? "📁" : "[DIR]";
+            var fileIcon = _options.UseEmojis ? "📄" : "";
+            var stats = _options.UseEmojis
+                ? $"({folderIcon}{folder.SubFolderCount} | {fileIcon}{folder.FileCount})"
+                : $"({folder.SubFolderCount} folders | {folder.FileCount} files)";
+            var folderText = $"{indent}{folderIcon} {displayName} {stats}";
 
             var paragraph = new Paragraph(folderText)
                 .SetFont(depth == 0 ? BoldFont : RegularFont)
@@ -235,7 +282,8 @@ namespace FolderVision.Exporters
 
             Document.Add(paragraph);
 
-            if (folder.SubFolders.Count > 0 && depth < 5)
+            var maxDepth = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : 5;
+            if (folder.SubFolders.Count > 0 && depth < maxDepth)
             {
                 foreach (var subFolder in folder.SubFolders.OrderBy(f => f.Name))
                 {

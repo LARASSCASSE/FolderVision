@@ -12,9 +12,15 @@ namespace FolderVision.Exporters
     {
         private int _currentItem = 0;
         private int _totalItems = 0;
+        private HtmlExportOptions _options;
 
-        public HtmlExporter()
+        public HtmlExporter() : this(HtmlExportOptions.Default)
         {
+        }
+
+        public HtmlExporter(HtmlExportOptions options)
+        {
+            _options = options ?? HtmlExportOptions.Default;
         }
 
         public async Task ExportAsync(ScanResult scanResult, string outputPath = "")
@@ -76,9 +82,19 @@ namespace FolderVision.Exporters
 
         private string GenerateHeader(ScanResult scanResult)
         {
+            if (!_options.IncludeHeader)
+                return string.Empty;
+
             var header = new StringBuilder();
-            header.AppendLine("    <header class=\"header\">");
-            header.AppendLine("        <h1>📁 Folder Scan Report</h1>");
+            var (primary, secondary, _) = ColorSchemeHelper.GetColors(_options.ColorScheme);
+            var customGradient = _options.CustomPrimaryColor != null && _options.CustomSecondaryColor != null
+                ? $"linear-gradient(135deg, {_options.CustomPrimaryColor} 0%, {_options.CustomSecondaryColor} 100%)"
+                : ColorSchemeHelper.GetGradient(_options.ColorScheme);
+
+            header.AppendLine($"    <header class=\"header\" style=\"background: {customGradient};\">");
+            var icon = _options.UseEmojis ? "📁 " : "";
+            var title = _options.CustomTitle ?? "Folder Scan Report";
+            header.AppendLine($"        <h1>{icon}{title}</h1>");
             header.AppendLine($"        <div class=\"scan-info\">");
             header.AppendLine($"            <div class=\"info-item\">");
             header.AppendLine($"                <strong>Scan Date:</strong> {scanResult.ScanStartTime:yyyy-MM-dd HH:mm:ss}");
@@ -96,9 +112,13 @@ namespace FolderVision.Exporters
 
         private string GenerateSummary(ScanResult scanResult)
         {
+            if (!_options.IncludeStatistics)
+                return string.Empty;
+
             var summary = new StringBuilder();
             summary.AppendLine("    <section class=\"summary\">");
-            summary.AppendLine("        <h2>📊 Scan Statistics</h2>");
+            var icon = _options.UseEmojis ? "📊 " : "";
+            summary.AppendLine($"        <h2>{icon}Scan Statistics</h2>");
             summary.AppendLine("        <div class=\"stats-grid\">");
             summary.AppendLine("            <div class=\"stat-card\">");
             summary.AppendLine("                <div class=\"stat-icon\">📁</div>");
@@ -128,9 +148,13 @@ namespace FolderVision.Exporters
 
         private string GenerateFolderTree(ScanResult scanResult)
         {
+            if (!_options.IncludeFolderTree)
+                return string.Empty;
+
             var tree = new StringBuilder();
             tree.AppendLine("    <section class=\"folder-tree\">");
-            tree.AppendLine("        <h2>🌳 Folder Structure</h2>");
+            var icon = _options.UseEmojis ? "🌳 " : "";
+            tree.AppendLine($"        <h2>{icon}Folder Structure</h2>");
             tree.AppendLine("        <div class=\"tree-container\">");
 
             foreach (var rootFolder in scanResult.RootFolders)
@@ -146,6 +170,12 @@ namespace FolderVision.Exporters
         private string GenerateFolderHtml(FolderInfo folder, int depth = 0, bool isRoot = false)
         {
             ReportProgress(folder.Name);
+
+            // Check max depth limit
+            if (_options.MaxTreeDepth > 0 && depth >= _options.MaxTreeDepth)
+            {
+                return string.Empty;
+            }
 
             var html = new StringBuilder();
             var indent = new string(' ', depth * 4);
@@ -164,13 +194,17 @@ namespace FolderVision.Exporters
             }
 
             var displayName = isRoot ? folder.FullPath : folder.Name;
-            html.AppendLine($"{indent}    <span class=\"folder-icon\">📁</span>");
+            var folderIcon = _options.UseEmojis ? "📁" : "[DIR]";
+            var fileIcon = _options.UseEmojis ? "📄" : "";
+            html.AppendLine($"{indent}    <span class=\"folder-icon\">{folderIcon}</span>");
             html.AppendLine($"{indent}    <span class=\"folder-name\" title=\"{EscapeHtml(folder.FullPath)}\">{EscapeHtml(displayName)}</span>");
-            html.AppendLine($"{indent}    <span class=\"folder-stats\">(📁{folder.SubFolderCount} | 📄{folder.FileCount})</span>");
+            var statPrefix = _options.UseEmojis ? $"({folderIcon}{folder.SubFolderCount} | {fileIcon}{folder.FileCount})" : $"({folder.SubFolderCount} folders | {folder.FileCount} files)";
+            html.AppendLine($"{indent}    <span class=\"folder-stats\">{statPrefix}</span>");
 
             if (hasSubFolders)
             {
-                html.AppendLine($"{indent}    <div class=\"subfolder-container\" id=\"{folderId}\" style=\"display: none;\">");
+                var displayStyle = _options.CollapseByDefault ? "display: none;" : "display: block;";
+                html.AppendLine($"{indent}    <div class=\"subfolder-container\" id=\"{folderId}\" style=\"{displayStyle}\">");
                 foreach (var subFolder in folder.SubFolders.OrderBy(f => f.Name))
                 {
                     html.AppendLine(GenerateFolderHtml(subFolder, depth + 1));
@@ -193,7 +227,7 @@ namespace FolderVision.Exporters
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: " + _options.FontFamily + @";
             line-height: 1.6;
             color: #333;
             background-color: #f8f9fa;
@@ -202,7 +236,7 @@ namespace FolderVision.Exporters
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: " + ColorSchemeHelper.GetGradient(_options.ColorScheme) + @";
             color: white;
             padding: 2rem;
             border-radius: 12px;
@@ -502,19 +536,8 @@ namespace FolderVision.Exporters
 
         private string FormatFileSize(long bytes)
         {
-            if (bytes == 0) return "0 B";
-
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB" };
-            int suffixIndex = 0;
-            double size = bytes;
-
-            while (size >= 1024 && suffixIndex < suffixes.Length - 1)
-            {
-                size /= 1024;
-                suffixIndex++;
-            }
-
-            return $"{size:F1} {suffixes[suffixIndex]}";
+            // Use the file size format from export options
+            return FileSizeFormatter.Format(bytes, _options.FileSizeFormat);
         }
 
         private string EscapeHtml(string text)

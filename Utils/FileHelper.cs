@@ -25,7 +25,12 @@ namespace FolderVision.Utils
 
         public static string FormatFileSize(long bytes)
         {
-            throw new NotImplementedException();
+            return FileSizeFormatter.FormatDefault(bytes);
+        }
+
+        public static string FormatFileSize(long bytes, FileSizeFormattingOptions? options)
+        {
+            return FileSizeFormatter.Format(bytes, options);
         }
 
         public static string GetRelativePath(string basePath, string fullPath)

@@ -30,7 +30,8 @@
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" add package itext7.bouncy-castle-adapter)",
       "Read(//mnt/c/Users/Pascal/Desktop/**)",
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -c Debug -- --platform-info)",
-      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -- --platform-test)"
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -- --platform-test)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -- --platform-info)"
     ],
     "deny": [],
     "ask": []

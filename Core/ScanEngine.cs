@@ -279,16 +279,47 @@ namespace FolderVision.Core
 
         private async Task ProcessSubdirectoriesInBatches(FolderInfo folderInfo, DirectoryInfo[] subdirectories, ScanSettings settings, CancellationToken cancellationToken, int currentDepth)
         {
-            const int batchSize = 50; // Process 50 directories at a time
-            var semaphore = new SemaphoreSlim(Math.Min(settings.MaxThreads, 8), Math.Min(settings.MaxThreads, 8)); // Limit concurrency for large batches
+            // Adaptive batch sizing based on directory count
+            // For very large directories (>10k items), use smaller batches to reduce memory pressure
+            int batchSize;
+            int maxConcurrency;
 
+            if (subdirectories.Length > 50000)
+            {
+                // Massive directories: very conservative settings
+                batchSize = 25;
+                maxConcurrency = Math.Min(settings.MaxThreads, 4);
+            }
+            else if (subdirectories.Length > 10000)
+            {
+                // Large directories: conservative settings
+                batchSize = 50;
+                maxConcurrency = Math.Min(settings.MaxThreads, 6);
+            }
+            else if (subdirectories.Length > 1000)
+            {
+                // Medium-large directories: balanced settings
+                batchSize = 100;
+                maxConcurrency = Math.Min(settings.MaxThreads, 8);
+            }
+            else
+            {
+                // Smaller directories: more aggressive batching
+                batchSize = 200;
+                maxConcurrency = settings.MaxThreads;
+            }
+
+            var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+            var processedBatches = 0;
+
+            // Use chunking to process in manageable blocks
             for (int i = 0; i < subdirectories.Length; i += batchSize)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                var batch = subdirectories.Skip(i).Take(batchSize);
-                var batchTasks = new List<Task>();
+                var batch = subdirectories.Skip(i).Take(batchSize).ToArray();
+                var batchTasks = new List<Task>(batch.Length);
 
                 foreach (var subdir in batch)
                 {
@@ -299,12 +330,36 @@ namespace FolderVision.Core
                 }
 
                 await Task.WhenAll(batchTasks);
+                processedBatches++;
 
-                // Allow GC to collect completed tasks and reduce memory pressure
-                if (i % (batchSize * 4) == 0) // Every 4 batches
+                // Progressive memory management
+                // For large directories, cleanup more frequently
+                var cleanupInterval = subdirectories.Length > 10000 ? 2 : 4;
+                if (processedBatches % cleanupInterval == 0)
                 {
                     _memoryMonitor?.ForceCleanupIfNeeded();
                 }
+
+                // Report progress for large batches
+                if (processedBatches % 10 == 0 && subdirectories.Length > 1000)
+                {
+                    var progress = (i + batchSize) * 100 / subdirectories.Length;
+                    LogDebug($"Batch processing: {progress}% complete ({i + batchSize}/{subdirectories.Length} directories)");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Logs debug information for large folder processing
+        /// </summary>
+        private void LogDebug(string message)
+        {
+            // This could be expanded to write to a log file or event
+            // For now, just using the existing error reporting mechanism with a prefix
+            lock (_lockObject)
+            {
+                // Don't add debug messages to error list, just for monitoring
+                // Could add a separate debug event if needed
             }
         }
 

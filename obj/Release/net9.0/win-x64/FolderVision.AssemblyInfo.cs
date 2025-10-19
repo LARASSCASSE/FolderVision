@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © 2024")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b7837bd2161785018c7c4ab2edeb1c025adfbd90")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+69136ecef0ea4f08e7f55d6d82a3a9331c2bb803")]
 [assembly: System.Reflection.AssemblyProductAttribute("FolderVision")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FolderVision")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
