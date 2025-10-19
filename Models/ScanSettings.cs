@@ -19,6 +19,7 @@ namespace FolderVision.Models
             NetworkDriveTimeout = TimeSpan.FromSeconds(30); // 30 seconds for network drives
             EnableAdaptiveBatching = true; // Enable adaptive batch sizing for large folders
             MaxDirectoriesPerBatch = 100; // Default batch size (overridden by adaptive batching)
+            LoggingOptions = LoggingOptions.Default; // Default logging configuration
         }
 
         public List<string> PathsToScan { get; set; }
@@ -42,6 +43,11 @@ namespace FolderVision.Models
         /// Maximum number of directories to process in a single batch (when adaptive batching is disabled)
         /// </summary>
         public int MaxDirectoriesPerBatch { get; set; }
+
+        /// <summary>
+        /// Logging configuration options
+        /// </summary>
+        public LoggingOptions LoggingOptions { get; set; }
 
         public void AddPathToScan(string path)
         {
@@ -105,7 +111,8 @@ namespace FolderVision.Models
                 DirectoryTimeout = TimeSpan.FromSeconds(10),
                 NetworkDriveTimeout = TimeSpan.FromSeconds(30),
                 EnableAdaptiveBatching = true,
-                MaxDirectoriesPerBatch = 100
+                MaxDirectoriesPerBatch = 100,
+                LoggingOptions = LoggingOptions.Default
             };
         }
 
@@ -126,7 +133,8 @@ namespace FolderVision.Models
                 DirectoryTimeout = TimeSpan.FromSeconds(30), // More time per directory
                 NetworkDriveTimeout = TimeSpan.FromMinutes(2),
                 EnableAdaptiveBatching = true, // Critical for large folders
-                MaxDirectoriesPerBatch = 50 // Smaller batches for memory efficiency
+                MaxDirectoriesPerBatch = 50, // Smaller batches for memory efficiency
+                LoggingOptions = LoggingOptions.Verbose // More detailed logging for large scans
             };
         }
 
@@ -145,7 +153,8 @@ namespace FolderVision.Models
                 DirectoryTimeout = DirectoryTimeout,
                 NetworkDriveTimeout = NetworkDriveTimeout,
                 EnableAdaptiveBatching = EnableAdaptiveBatching,
-                MaxDirectoriesPerBatch = MaxDirectoriesPerBatch
+                MaxDirectoriesPerBatch = MaxDirectoriesPerBatch,
+                LoggingOptions = LoggingOptions.Clone()
             };
         }
 

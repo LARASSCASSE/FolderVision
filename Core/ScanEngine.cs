@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FolderVision.Models;
 using FolderVision.Utils;
+using FolderVision.Core.Logging;
+using FolderVision.Core.Logging.Providers;
 
 namespace FolderVision.Core
 {
@@ -20,6 +22,7 @@ namespace FolderVision.Core
         private readonly List<string> _errors;
         private MemoryMonitor? _memoryMonitor;
         private bool _useProgressiveEstimation;
+        private Logger? _logger;
 
         public ScanEngine()
         {
@@ -34,6 +37,16 @@ namespace FolderVision.Core
 
             if (!Directory.Exists(folderPath))
                 throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
+
+            // Initialize logging
+            InitializeLogging(settings.LoggingOptions);
+
+            _logger?.Info($"Starting scan of folder: {folderPath}", new Dictionary<string, object>
+            {
+                ["FolderPath"] = folderPath,
+                ["MaxDepth"] = settings.MaxDepth,
+                ["MaxThreads"] = settings.MaxThreads
+            });
 
             var scanResult = new ScanResult
             {
@@ -66,19 +79,33 @@ namespace FolderVision.Core
                 FinalizeProgress();
 
                 scanResult.SetScanDuration(DateTime.Now);
+
+                _logger?.Info($"Scan completed successfully", new Dictionary<string, object>
+                {
+                    ["TotalFolders"] = scanResult.TotalFolders,
+                    ["TotalFiles"] = scanResult.TotalFiles,
+                    ["Duration"] = scanResult.ScanDuration.TotalSeconds
+                });
+
                 ScanCompleted?.Invoke(this, scanResult);
                 return scanResult;
             }
             catch (OperationCanceledException)
             {
+                _logger?.Warning("Scan was cancelled");
                 scanResult.SetScanDuration(DateTime.Now);
                 return scanResult;
             }
             catch (Exception ex)
             {
+                _logger?.Error($"Scan failed", ex);
                 _errors.Add($"Scan failed: {ex.Message}");
                 scanResult.SetScanDuration(DateTime.Now);
                 return scanResult;
+            }
+            finally
+            {
+                _logger?.Flush();
             }
         }
 
@@ -344,7 +371,13 @@ namespace FolderVision.Core
                 if (processedBatches % 10 == 0 && subdirectories.Length > 1000)
                 {
                     var progress = (i + batchSize) * 100 / subdirectories.Length;
-                    LogDebug($"Batch processing: {progress}% complete ({i + batchSize}/{subdirectories.Length} directories)");
+                    _logger?.Debug($"Batch processing: {progress}% complete ({i + batchSize}/{subdirectories.Length} directories)",
+                        new Dictionary<string, object>
+                        {
+                            ["Progress"] = progress,
+                            ["Processed"] = i + batchSize,
+                            ["Total"] = subdirectories.Length
+                        });
                 }
             }
         }
@@ -354,13 +387,38 @@ namespace FolderVision.Core
         /// </summary>
         private void LogDebug(string message)
         {
-            // This could be expanded to write to a log file or event
-            // For now, just using the existing error reporting mechanism with a prefix
-            lock (_lockObject)
+            _logger?.Debug(message);
+        }
+
+        /// <summary>
+        /// Initializes the logging system with the provided options
+        /// </summary>
+        private void InitializeLogging(LoggingOptions options)
+        {
+            if (options.MinLevel == LogLevel.None)
+                return;
+
+            _logger = new Logger("ScanEngine", options.MinLevel);
+
+            if (options.EnableConsoleLog)
             {
-                // Don't add debug messages to error list, just for monitoring
-                // Could add a separate debug event if needed
+                _logger.AddProvider(new ConsoleLogProvider(
+                    options.UseConsoleColors,
+                    options.UseStructuredFormat));
             }
+
+            if (options.EnableFileLog)
+            {
+                _logger.AddProvider(new FileLogProvider(
+                    options.LogDirectory,
+                    options.LogFilePrefix,
+                    options.MaxLogFileSizeMB,
+                    options.MaxLogFileCount,
+                    options.UseStructuredFormat));
+            }
+
+            // Set correlation ID for this scan session
+            _logger.SetCorrelationId(Guid.NewGuid().ToString("N").Substring(0, 8));
         }
 
         private async Task ProcessSubdirectoryAsync(FolderInfo parentFolder, DirectoryInfo subdir, ScanSettings settings, SemaphoreSlim semaphore, CancellationToken cancellationToken, int currentDepth)
@@ -452,6 +510,9 @@ namespace FolderVision.Core
             {
                 _errors.Add(message);
             }
+
+            // Log to structured logging system
+            _logger?.Error(message);
 
             // Trigger event for external monitoring
             ErrorOccurred?.Invoke(this, message);
