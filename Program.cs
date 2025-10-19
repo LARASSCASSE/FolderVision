@@ -23,28 +23,12 @@ namespace FolderVision
 
             try
             {
-                // Temporary test mode - uncomment to test utilities
-                if (args.Length > 0 && args[0] == "--test")
+                // Check for test commands
+                if (args.Length > 0)
                 {
-                    TestFileHelper.RunTests();
-                    TestPdfIntegration.RunTests();
-                    TestWorkflow.RunWorkflowTests();
-                    return;
-                }
-
-                // Platform test mode
-                if (args.Length > 0 && args[0] == "--platform-test")
-                {
-                    TestPlatform.TestPlatformHelper();
-                    return;
-                }
-
-                // Direct scan test mode
-                if (args.Length > 0 && args[0] == "--scan-test")
-                {
-                    string testPath = args.Length > 1 ? args[1] : "./test_scan_folder";
-                    var success = await TestDirectScan.TestScanAndExport(Path.GetFullPath(testPath));
-                    Environment.ExitCode = success ? 0 : 1;
+                    Console.WriteLine("Manual test commands have been moved to Tests/Manual/");
+                    Console.WriteLine("Use 'dotnet test' to run automated unit tests.");
+                    Console.WriteLine("Use 'dotnet run' without arguments to start the application.");
                     return;
                 }
 

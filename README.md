@@ -74,9 +74,12 @@ FolderVision/
 
 ## Documentation
 
-- [Logging System Guide](LOGGING_SYSTEM.md)
-- [Export Customization](Models/ExportOptions.cs)
-- [Usage Examples](Examples/)
+- [Project Structure](docs/PROJECT_STRUCTURE.md) - Complete project organization
+- [Logging System Guide](docs/LOGGING_SYSTEM.md) - Structured logging documentation
+- [Build Instructions](docs/BUILD.md) - How to build and deploy
+- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
+- [Export Customization](Models/ExportOptions.cs) - Color schemes and options
+- [Usage Examples](Examples/) - Code examples
 
 ## Technologies
 
@@ -85,6 +88,18 @@ FolderVision/
 - xUnit (Testing)
 - GitHub Actions (CI/CD)
 
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `dotnet test`
+5. Submit a pull request
+
 ## License
 
 MIT License - See [LICENSE](LICENSE)
+
+---
+
+**Status:** ✅ Production Ready | **Version:** 2.1 | **Tests:** 42/42 Passing

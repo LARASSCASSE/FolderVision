@@ -2,6 +2,7 @@ D:\Projects\FolderVision\bin\Release\net9.0\win-x64\FolderVision.exe
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\FolderVision.deps.json
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\FolderVision.runtimeconfig.json
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\FolderVision.dll
+D:\Projects\FolderVision\bin\Release\net9.0\win-x64\BouncyCastle.Cryptography.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.barcodes.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.bouncy-castle-connector.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.forms.dll
@@ -13,6 +14,7 @@ D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.pdfua.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.sign.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.styledxmlparser.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.svg.dll
+D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.bouncy-castle-adapter.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.commons.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\Microsoft.DotNet.PlatformAbstractions.dll
 D:\Projects\FolderVision\bin\Release\net9.0\win-x64\Microsoft.Extensions.DependencyInjection.dll
@@ -217,5 +219,3 @@ D:\Projects\FolderVision\obj\Release\net9.0\win-x64\FolderVision.dll
 D:\Projects\FolderVision\obj\Release\net9.0\win-x64\refint\FolderVision.dll
 D:\Projects\FolderVision\obj\Release\net9.0\win-x64\FolderVision.genruntimeconfig.cache
 D:\Projects\FolderVision\obj\Release\net9.0\win-x64\ref\FolderVision.dll
-D:\Projects\FolderVision\bin\Release\net9.0\win-x64\BouncyCastle.Cryptography.dll
-D:\Projects\FolderVision\bin\Release\net9.0\win-x64\itext.bouncy-castle-adapter.dll
