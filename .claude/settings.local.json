@@ -31,7 +31,16 @@
       "Read(//mnt/c/Users/Pascal/Desktop/**)",
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -c Debug -- --platform-info)",
       "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -- --platform-test)",
-      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -- --platform-info)"
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" run --project FolderVision.csproj -- --platform-info)",
+      "Bash(dotnet new:*)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" new xunit -n FolderVision.Tests -o FolderVision.Tests)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" build FolderVision.Tests/FolderVision.Tests.csproj --configuration Release)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" new sln -n FolderVision)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" sln add FolderVision.csproj)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" sln add FolderVision.Tests/FolderVision.Tests.csproj)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" build FolderVision.sln --configuration Release)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" test FolderVision.Tests/FolderVision.Tests.csproj --configuration Release --verbosity normal)",
+      "Bash(\"/mnt/c/Program Files/dotnet/dotnet.exe\" test FolderVision.Tests/FolderVision.Tests.csproj --configuration Release --verbosity minimal)"
     ],
     "deny": [],
     "ask": []

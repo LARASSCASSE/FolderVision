@@ -62,4 +62,9 @@
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="FolderVision.Tests/**" />
+    <None Include="FolderVision.Tests/**" />
+  </ItemGroup>
+
 </Project>
