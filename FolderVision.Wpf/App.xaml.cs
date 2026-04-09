@@ -1,51 +1,75 @@
+using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace FolderVision.Wpf
 {
     public partial class App : System.Windows.Application
     {
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
-            // Catch any unhandled exception and show a MessageBox instead of silently closing
-            DispatcherUnhandledException += (s, ex) =>
-            {
-                System.Windows.MessageBox.Show(
-                    $"An unexpected error occurred:\n\n{ex.Exception.Message}\n\n{ex.Exception.StackTrace}",
-                    "FolderVision Error",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-                ex.Handled = true;
-            };
-
-            AppDomain.CurrentDomain.UnhandledException += (s, ex) =>
-            {
-                System.Windows.MessageBox.Show(
-                    $"Fatal error:\n\n{ex.ExceptionObject}",
-                    "FolderVision Fatal Error",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-            };
+            // Register exception handlers BEFORE anything else
+            DispatcherUnhandledException += OnDispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
 
             base.OnStartup(e);
 
-            // Show splash immediately
+            // Show splash immediately (synchronous — no await here)
             var splash = new SplashWindow();
             splash.Show();
 
-            // Load MainWindow asynchronously so UI stays responsive
-            await Task.Run(() => System.Threading.Thread.Sleep(100)); // let splash render first
+            // Load MainWindow on next dispatcher cycle (Background priority)
+            // so the splash gets a chance to render first
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try
+                {
+                    // Let splash paint itself
+                    await Task.Delay(80);
 
-            splash.SetStatus("Initializing...");
-            var mainWindow = new MainWindow();
+                    splash.SetStatus("Initializing...");
+                    await Task.Delay(80);
 
-            splash.SetStatus("Ready");
-            await Task.Delay(200); // brief pause so user sees "Ready"
+                    var main = new MainWindow();
 
-            mainWindow.Show();
-            splash.Close();
+                    splash.SetStatus("Ready");
+                    await Task.Delay(180);
 
-            MainWindow = mainWindow;
+                    main.Show();
+                    MainWindow = main;
+                    splash.Close();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Startup error:\n\n{ex.Message}\n\n{ex.StackTrace}",
+                        "FolderVision",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    splash.Close();
+                    Shutdown(1);
+                }
+            }, DispatcherPriority.Background);
+        }
+
+        private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            System.Windows.MessageBox.Show(
+                $"Unexpected error:\n\n{e.Exception.Message}\n\n{e.Exception.StackTrace}",
+                "FolderVision Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            e.Handled = true;
+        }
+
+        private void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            System.Windows.MessageBox.Show(
+                $"Fatal error:\n\n{e.ExceptionObject}",
+                "FolderVision Fatal Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace FolderVision.Models
                 if (folder != null && !RootFolders.Contains(folder))
                 {
                     RootFolders.Add(folder);
-                    UpdateTotals();
+                    UpdateTotalsInternal();
                 }
             }
         }
@@ -49,9 +49,14 @@ namespace FolderVision.Models
         {
             lock (_lockObject)
             {
-                TotalFolders = RootFolders.Sum(rf => 1 + rf.GetTotalSubFolderCount());
-                TotalFiles = RootFolders.Sum(rf => rf.GetTotalFileCount());
+                UpdateTotalsInternal();
             }
+        }
+
+        private void UpdateTotalsInternal()
+        {
+            TotalFolders = RootFolders.Sum(rf => 1 + rf.GetTotalSubFolderCount());
+            TotalFiles = RootFolders.Sum(rf => rf.GetTotalFileCount());
         }
 
         public void SetScanDuration(DateTime endTime)
