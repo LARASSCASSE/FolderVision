@@ -13,9 +13,6 @@
     <!-- Match main project: self-contained win-x64 so project reference works -->
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <!-- Pre-compile to native code at publish time → much faster startup -->
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <TieredCompilation>true</TieredCompilation>
   </PropertyGroup>
 
   <ItemGroup>

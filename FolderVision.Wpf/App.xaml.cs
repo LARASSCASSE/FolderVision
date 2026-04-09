@@ -1,9 +1,13 @@
+using System.Threading.Tasks;
+using System.Windows;
+
 namespace FolderVision.Wpf
 {
     public partial class App : System.Windows.Application
     {
-        protected override void OnStartup(System.Windows.StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
+            // Catch any unhandled exception and show a MessageBox instead of silently closing
             DispatcherUnhandledException += (s, ex) =>
             {
                 System.Windows.MessageBox.Show(
@@ -24,6 +28,24 @@ namespace FolderVision.Wpf
             };
 
             base.OnStartup(e);
+
+            // Show splash immediately
+            var splash = new SplashWindow();
+            splash.Show();
+
+            // Load MainWindow asynchronously so UI stays responsive
+            await Task.Run(() => System.Threading.Thread.Sleep(100)); // let splash render first
+
+            splash.SetStatus("Initializing...");
+            var mainWindow = new MainWindow();
+
+            splash.SetStatus("Ready");
+            await Task.Delay(200); // brief pause so user sees "Ready"
+
+            mainWindow.Show();
+            splash.Close();
+
+            MainWindow = mainWindow;
         }
     }
 }
