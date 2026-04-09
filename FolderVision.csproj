@@ -67,6 +67,10 @@
   <ItemGroup>
     <Compile Remove="FolderVision.Tests/**" />
     <None Include="FolderVision.Tests/**" />
+    <Compile Remove="FolderVision.Wpf/**" />
+    <None Include="FolderVision.Wpf/**" />
+    <EmbeddedResource Remove="FolderVision.Wpf/**" />
+    <Page Remove="FolderVision.Wpf/**" />
   </ItemGroup>
 
 </Project>

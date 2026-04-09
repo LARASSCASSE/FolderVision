@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>FolderVision</AssemblyTitle>
+    <AssemblyDescription>FolderVision WPF GUI</AssemblyDescription>
+    <RootNamespace>FolderVision.Wpf</RootNamespace>
+    <!-- Match main project: self-contained win-x64 so project reference works -->
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FolderVision.csproj" />
+  </ItemGroup>
+
+</Project>
