@@ -47,13 +47,9 @@
                    HorizontalAlignment="Center"
                    Margin="0,0,0,8"/>
 
-        <!-- Animated loading bar -->
+        <!-- Animated loading bar (looping) -->
         <Grid Grid.Row="2" Margin="32,0,32,20" VerticalAlignment="Bottom">
-
-            <!-- Track -->
             <Border Background="#FF2D2D30" CornerRadius="3" Height="4"/>
-
-            <!-- Animated indicator -->
             <Canvas Height="4" ClipToBounds="True">
                 <Border x:Name="LoadingBar"
                         Background="#FF4C7FDB"
@@ -69,9 +65,7 @@
                                         Storyboard.TargetName="LoadingBar"
                                         Storyboard.TargetProperty="(Canvas.Left)"
                                         From="-80" To="356"
-                                        Duration="0:0:1.2"
-                                        AutoReverse="False"
-                                        EasingFunction="{x:Null}"/>
+                                        Duration="0:0:1.2"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>

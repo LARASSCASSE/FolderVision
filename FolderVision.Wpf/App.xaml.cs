@@ -15,9 +15,21 @@ namespace FolderVision.Wpf
 
             base.OnStartup(e);
 
-            // Show splash immediately (synchronous — no await here)
-            var splash = new SplashWindow();
-            splash.Show();
+            // Show splash immediately — wrap in try/catch so any XAML parse error surfaces
+            SplashWindow splash;
+            try
+            {
+                splash = new SplashWindow();
+                splash.Show();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to load splash screen:\n\n{ex.Message}",
+                    "FolderVision", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(1);
+                return;
+            }
 
             // Load MainWindow on next dispatcher cycle (Background priority)
             // so the splash gets a chance to render first

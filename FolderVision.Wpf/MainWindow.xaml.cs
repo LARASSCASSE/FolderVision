@@ -18,6 +18,9 @@ namespace FolderVision.Wpf
         private ScanResult? _lastScanResult;
         private bool _isScanning;
 
+        // Track current handler to avoid stale subscriptions
+        private EventHandler<ProgressEventArgs>? _progressHandler;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -38,9 +41,7 @@ namespace FolderVision.Wpf
             };
 
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
                 PathInputBox.Text = dialog.SelectedPath;
-            }
         }
 
         private void AddPathButton_Click(object sender, RoutedEventArgs e)
@@ -57,13 +58,10 @@ namespace FolderVision.Wpf
                 SetStatus($"Path does not exist: {path}");
                 System.Windows.MessageBox.Show(
                     $"The path does not exist:\n{path}",
-                    "Invalid Path",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    "Invalid Path", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // Avoid duplicates
             foreach (var item in PathsListBox.Items)
             {
                 if (string.Equals(item.ToString(), path, StringComparison.OrdinalIgnoreCase))
@@ -91,7 +89,8 @@ namespace FolderVision.Wpf
 
         private void PathsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            RemovePathButton.IsEnabled = PathsListBox.SelectedItem != null;
+            if (RemovePathButton != null)
+                RemovePathButton.IsEnabled = PathsListBox.SelectedItem != null && !_isScanning;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -117,16 +116,13 @@ namespace FolderVision.Wpf
             {
                 System.Windows.MessageBox.Show(
                     "Please add at least one folder path to scan.",
-                    "No Paths",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    "No Paths", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             _isScanning = true;
             _lastScanResult = null;
 
-            // Reset UI
             SetScanningState(true);
             UpdateProgress(0, "Starting scan...");
             StatsBlock.Visibility = Visibility.Collapsed;
@@ -136,33 +132,41 @@ namespace FolderVision.Wpf
             ExportHtmlButton.IsEnabled = false;
             ExportPdfButton.IsEnabled = false;
 
-            var settings = BuildScanSettings(paths);
+            var settings = BuildScanSettings();
+
+            // Always create a fresh ScanEngine and clean up previous handler
+            if (_scanEngine != null && _progressHandler != null)
+                _scanEngine.ProgressChanged -= _progressHandler;
+
             _scanEngine = new ScanEngine();
 
-            _scanEngine.ProgressChanged += (s, args) =>
+            _progressHandler = (s, args) =>
             {
                 Dispatcher.Invoke(() =>
-                {
-                    UpdateProgress(args.PercentComplete, TruncatePath(args.CurrentPath, 60));
-                });
+                    UpdateProgress(Math.Min(100, args.PercentComplete), TruncatePath(args.CurrentPath, 60)));
             };
+            _scanEngine.ProgressChanged += _progressHandler;
 
             try
             {
                 SetStatus($"Scanning {paths.Count} path(s)...");
+
                 ScanResult? aggregatedResult = null;
+                var scanStart = DateTime.Now;
 
                 if (paths.Count == 1)
                 {
                     aggregatedResult = await _scanEngine.ScanFolderAsync(paths[0], settings);
+                    aggregatedResult?.UpdateTotals();
                 }
                 else
                 {
-                    // Multiple paths: scan each sequentially and merge
-                    aggregatedResult = new ScanResult { ScanStartTime = DateTime.Now };
+                    aggregatedResult = new ScanResult { ScanStartTime = scanStart };
                     foreach (var path in paths)
                     {
                         var partialResult = await _scanEngine.ScanFolderAsync(path, settings);
+                        if (partialResult == null) continue;
+
                         foreach (var root in partialResult.RootFolders)
                             aggregatedResult.AddRootFolder(root);
                         foreach (var p in partialResult.ScannedPaths)
@@ -172,16 +176,21 @@ namespace FolderVision.Wpf
                     aggregatedResult.UpdateTotals();
                 }
 
-                _lastScanResult = aggregatedResult;
-                OnScanCompleted(aggregatedResult);
+                if (aggregatedResult != null)
+                {
+                    _lastScanResult = aggregatedResult;
+                    OnScanCompleted(aggregatedResult);
+                }
+                else
+                {
+                    SetStatus("Scan produced no results.");
+                }
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show(
                     $"Scan failed:\n{ex.Message}",
-                    "Scan Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    "Scan Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 SetStatus("Scan failed.");
             }
             finally
@@ -203,16 +212,13 @@ namespace FolderVision.Wpf
             UpdateProgress(100, "Scan complete");
             SetStatus($"Scan complete — {result.TotalFolders:N0} folders, {result.TotalFiles:N0} files in {result.ScanDuration.TotalSeconds:F1}s");
 
-            // Stats block
             TotalFoldersLabel.Text = result.TotalFolders.ToString("N0");
             TotalFilesLabel.Text = result.TotalFiles.ToString("N0");
             DurationLabel.Text = $"{result.ScanDuration.TotalSeconds:F2}s";
             StatsBlock.Visibility = Visibility.Visible;
 
-            // Populate tree
             PopulateTree(result);
 
-            // Enable export buttons
             ExportHtmlButton.IsEnabled = true;
             ExportPdfButton.IsEnabled = true;
         }
@@ -226,17 +232,13 @@ namespace FolderVision.Wpf
             FolderTreeView.Items.Clear();
 
             foreach (var rootFolder in result.RootFolders)
-            {
-                var rootItem = BuildTreeItem(rootFolder, isRoot: true);
-                FolderTreeView.Items.Add(rootItem);
-            }
+                FolderTreeView.Items.Add(BuildTreeItem(rootFolder, isRoot: true));
 
             if (FolderTreeView.Items.Count > 0)
             {
                 TreePlaceholder.Visibility = Visibility.Collapsed;
                 FolderTreeView.Visibility = Visibility.Visible;
 
-                // Expand top-level items
                 foreach (TreeViewItem item in FolderTreeView.Items)
                     item.IsExpanded = true;
             }
@@ -244,7 +246,10 @@ namespace FolderVision.Wpf
 
         private TreeViewItem BuildTreeItem(FolderInfo folder, bool isRoot = false)
         {
-            var displayName = isRoot ? folder.FullPath : folder.Name;
+            var displayName = isRoot
+                ? folder.FullPath
+                : (string.IsNullOrEmpty(folder.Name) ? folder.FullPath : folder.Name);
+
             var header = $"📁 {displayName}  ({folder.SubFolders.Count} folders | {folder.FileCount} files)";
 
             var item = new TreeViewItem
@@ -287,22 +292,18 @@ namespace FolderVision.Wpf
                 SetStatus($"HTML exported: {dialog.FileName}");
                 System.Windows.MessageBox.Show(
                     $"HTML report saved to:\n{dialog.FileName}",
-                    "Export Complete",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show(
                     $"Export failed:\n{ex.Message}",
-                    "Export Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 SetStatus("HTML export failed.");
             }
             finally
             {
-                ExportHtmlButton.IsEnabled = true;
+                ExportHtmlButton.IsEnabled = _lastScanResult != null;
             }
         }
 
@@ -329,22 +330,18 @@ namespace FolderVision.Wpf
                 SetStatus($"PDF exported: {dialog.FileName}");
                 System.Windows.MessageBox.Show(
                     $"PDF report saved to:\n{dialog.FileName}",
-                    "Export Complete",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show(
                     $"Export failed:\n{ex.Message}",
-                    "Export Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 SetStatus("PDF export failed.");
             }
             finally
             {
-                ExportPdfButton.IsEnabled = true;
+                ExportPdfButton.IsEnabled = _lastScanResult != null;
             }
         }
 
@@ -352,11 +349,11 @@ namespace FolderVision.Wpf
         //  HELPERS
         // ─────────────────────────────────────────────────────────────────────
 
-        private ScanSettings BuildScanSettings(List<string> paths)
+        private ScanSettings BuildScanSettings()
         {
-            var settings = new ScanSettings
+            return new ScanSettings
             {
-                MaxThreads = (int)ThreadsSlider.Value,
+                MaxThreads = Math.Max(1, Math.Min(32, (int)ThreadsSlider.Value)),
                 SkipHiddenFolders = SkipHiddenCheckBox.IsChecked == true,
                 SkipSystemFolders = SkipSystemCheckBox.IsChecked == true,
                 MaxDepth = 500,
@@ -365,21 +362,13 @@ namespace FolderVision.Wpf
                 NetworkDriveTimeout = TimeSpan.FromMinutes(5),
                 LoggingOptions = new LoggingOptions { MinLevel = LogLevel.None }
             };
-
-            foreach (var p in paths)
-                settings.PathsToScan.Add(p);
-
-            return settings;
         }
 
         private List<string> GetAddedPaths()
         {
             var list = new List<string>();
             foreach (var item in PathsListBox.Items)
-            {
-                if (item is string s)
-                    list.Add(s);
-            }
+                if (item is string s) list.Add(s);
             return list;
         }
 
@@ -390,7 +379,6 @@ namespace FolderVision.Wpf
 
         private void SetScanningState(bool scanning)
         {
-            _isScanning = scanning;
             StartScanButton.IsEnabled = !scanning && PathsListBox.Items.Count > 0;
             CancelScanButton.IsEnabled = scanning;
             AddPathButton.IsEnabled = !scanning;
@@ -404,7 +392,7 @@ namespace FolderVision.Wpf
 
         private void UpdateProgress(int percent, string message)
         {
-            ScanProgressBar.Value = percent;
+            ScanProgressBar.Value = Math.Min(100, Math.Max(0, percent));
             ProgressLabel.Text = message;
         }
 
@@ -417,7 +405,10 @@ namespace FolderVision.Wpf
         {
             if (string.IsNullOrEmpty(path) || path.Length <= maxLength)
                 return path;
-            return "..." + path[^(maxLength - 3)..];
+
+            // Show beginning and end with ellipsis in middle
+            var half = (maxLength - 3) / 2;
+            return path[..half] + "..." + path[^half..];
         }
     }
 }
