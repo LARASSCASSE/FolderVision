@@ -8,9 +8,11 @@ namespace FolderVision.Core
 {
     public class ProgressTracker
     {
+        private const int MaxProgressHistorySize = 10;
+
         private readonly object _lockObject = new object();
         private readonly ConcurrentDictionary<int, ThreadProgress> _threadProgresses;
-        private readonly List<DateTime> _progressHistory;
+        private readonly Queue<DateTime> _progressHistory;
         private long _totalThreads;
         private long _completedThreads;
         private DateTime _startTime;
@@ -20,7 +22,7 @@ namespace FolderVision.Core
         public ProgressTracker()
         {
             _threadProgresses = new ConcurrentDictionary<int, ThreadProgress>();
-            _progressHistory = new List<DateTime>();
+            _progressHistory = new Queue<DateTime>(MaxProgressHistorySize + 1);
         }
 
         public void Initialize(long totalThreads)
@@ -65,13 +67,10 @@ namespace FolderVision.Core
                     threadProgress.Status = ThreadProgressStatus.Running;
 
                     _lastUpdateTime = DateTime.Now;
-                    _progressHistory.Add(_lastUpdateTime);
+                    _progressHistory.Enqueue(_lastUpdateTime);
 
-                    // Keep only recent history for rate calculation (last 10 updates)
-                    if (_progressHistory.Count > 10)
-                    {
-                        _progressHistory.RemoveAt(0);
-                    }
+                    if (_progressHistory.Count > MaxProgressHistorySize)
+                        _progressHistory.Dequeue();
 
                     RaiseProgressChanged();
                 }
@@ -231,7 +230,7 @@ namespace FolderVision.Core
                 {
                     if (_progressHistory.Count < 2) return 0;
 
-                    var timeSpan = _progressHistory.Last() - _progressHistory.First();
+                    var timeSpan = _progressHistory.Last() - _progressHistory.Peek();
                     if (timeSpan.TotalSeconds <= 0) return 0;
 
                     return _progressHistory.Count / timeSpan.TotalSeconds;

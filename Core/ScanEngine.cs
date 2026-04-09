@@ -15,6 +15,21 @@ namespace FolderVision.Core
 {
     public class ScanEngine
     {
+        private const int BatchThresholdMassive   = 50_000;
+        private const int BatchThresholdLarge     = 10_000;
+        private const int BatchThresholdMedium    = 1_000;
+        private const int BatchThresholdSmall     = 100;
+        private const int BatchSizeMassive        = 25;
+        private const int BatchSizeLarge          = 50;
+        private const int BatchSizeMedium         = 100;
+        private const int BatchSizeSmall          = 200;
+        private const int MaxConcurrencyMassive   = 4;
+        private const int MaxConcurrencyLarge     = 6;
+        private const int MaxConcurrencyMedium    = 8;
+        private const int CleanupIntervalLarge    = 2;
+        private const int CleanupIntervalDefault  = 4;
+        private const int ProgressReportInterval  = 10;
+
         private CancellationTokenSource? _cancellationTokenSource;
         private readonly object _lockObject = new object();
         private long _processedDirectories;
@@ -53,6 +68,7 @@ namespace FolderVision.Core
                 ScanStartTime = DateTime.Now
             };
 
+            _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource(settings.GlobalTimeout);
             _processedDirectories = 0;
             _estimatedDirectories = 1; // Start with 1 for the root directory
@@ -106,6 +122,8 @@ namespace FolderVision.Core
             finally
             {
                 _logger?.Flush();
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
             }
         }
 
@@ -311,28 +329,28 @@ namespace FolderVision.Core
             int batchSize;
             int maxConcurrency;
 
-            if (subdirectories.Length > 50000)
+            if (subdirectories.Length > BatchThresholdMassive)
             {
                 // Massive directories: very conservative settings
-                batchSize = 25;
-                maxConcurrency = Math.Min(settings.MaxThreads, 4);
+                batchSize = BatchSizeMassive;
+                maxConcurrency = Math.Min(settings.MaxThreads, MaxConcurrencyMassive);
             }
-            else if (subdirectories.Length > 10000)
+            else if (subdirectories.Length > BatchThresholdLarge)
             {
                 // Large directories: conservative settings
-                batchSize = 50;
-                maxConcurrency = Math.Min(settings.MaxThreads, 6);
+                batchSize = BatchSizeLarge;
+                maxConcurrency = Math.Min(settings.MaxThreads, MaxConcurrencyLarge);
             }
-            else if (subdirectories.Length > 1000)
+            else if (subdirectories.Length > BatchThresholdMedium)
             {
                 // Medium-large directories: balanced settings
-                batchSize = 100;
-                maxConcurrency = Math.Min(settings.MaxThreads, 8);
+                batchSize = BatchSizeMedium;
+                maxConcurrency = Math.Min(settings.MaxThreads, MaxConcurrencyMedium);
             }
             else
             {
                 // Smaller directories: more aggressive batching
-                batchSize = 200;
+                batchSize = BatchSizeSmall;
                 maxConcurrency = settings.MaxThreads;
             }
 
@@ -345,7 +363,8 @@ namespace FolderVision.Core
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                var batch = subdirectories.Skip(i).Take(batchSize).ToArray();
+                var actualBatch = Math.Min(batchSize, subdirectories.Length - i);
+                var batch = subdirectories[i..(i + actualBatch)];
                 var batchTasks = new List<Task>(batch.Length);
 
                 foreach (var subdir in batch)
@@ -361,14 +380,14 @@ namespace FolderVision.Core
 
                 // Progressive memory management
                 // For large directories, cleanup more frequently
-                var cleanupInterval = subdirectories.Length > 10000 ? 2 : 4;
+                var cleanupInterval = subdirectories.Length > BatchThresholdLarge ? CleanupIntervalLarge : CleanupIntervalDefault;
                 if (processedBatches % cleanupInterval == 0)
                 {
                     _memoryMonitor?.ForceCleanupIfNeeded();
                 }
 
                 // Report progress for large batches
-                if (processedBatches % 10 == 0 && subdirectories.Length > 1000)
+                if (processedBatches % ProgressReportInterval == 0 && subdirectories.Length > BatchThresholdMedium)
                 {
                     var progress = (i + batchSize) * 100 / subdirectories.Length;
                     _logger?.Debug($"Batch processing: {progress}% complete ({i + batchSize}/{subdirectories.Length} directories)",
@@ -380,14 +399,6 @@ namespace FolderVision.Core
                         });
                 }
             }
-        }
-
-        /// <summary>
-        /// Logs debug information for large folder processing
-        /// </summary>
-        private void LogDebug(string message)
-        {
-            _logger?.Debug(message);
         }
 
         /// <summary>

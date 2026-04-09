@@ -27,12 +27,8 @@ namespace FolderVision.Utils
 
         public long GetAccurateMemoryUsageMB()
         {
-            // Only use this for critical decisions, not frequent monitoring
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-
-            var accurateMemory = GC.GetTotalMemory(false) / (1024 * 1024);
+            // GC.GetTotalMemory(true) forces a collection and returns accurate usage
+            var accurateMemory = GC.GetTotalMemory(forceFullCollection: true) / (1024 * 1024);
             _lastMemoryCheck = accurateMemory;
             return accurateMemory;
         }

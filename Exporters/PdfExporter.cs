@@ -231,12 +231,6 @@ namespace FolderVision.Exporters
             Document.Add(new AreaBreak());
         }
 
-        private void AddTocSubfolders(List parentList, FolderInfo folder, int currentDepth, int maxDepth)
-        {
-            // Simplified implementation to avoid nested list issues
-            // For now, just add the folder to the main list
-        }
-
         private void AddFolderTree(ScanResult scanResult)
         {
             var icon = _options.UseEmojis ? "🌳 " : "";

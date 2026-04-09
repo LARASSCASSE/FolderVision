@@ -67,9 +67,9 @@ namespace FolderVision.Tests
 
             Assert.True(settings.SkipSystemFolders);
             Assert.True(settings.SkipHiddenFolders);
-            Assert.Equal(4, settings.MaxThreads);
-            Assert.Equal(50, settings.MaxDepth);
-            Assert.Equal(512, settings.MaxMemoryUsageMB);
+            Assert.Equal(8, settings.MaxThreads);
+            Assert.Equal(500, settings.MaxDepth);
+            Assert.Equal(2048, settings.MaxMemoryUsageMB);
             Assert.True(settings.EnableMemoryOptimization);
         }
 
@@ -78,9 +78,9 @@ namespace FolderVision.Tests
         {
             var settings = ScanSettings.CreateForLargeFolders();
 
-            Assert.Equal(8, settings.MaxThreads);
-            Assert.Equal(100, settings.MaxDepth);
-            Assert.Equal(1024, settings.MaxMemoryUsageMB);
+            Assert.Equal(16, settings.MaxThreads);
+            Assert.Equal(1000, settings.MaxDepth);
+            Assert.Equal(4096, settings.MaxMemoryUsageMB);
             Assert.Equal(LogLevel.Debug, settings.LoggingOptions.MinLevel);
         }
 

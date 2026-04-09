@@ -225,7 +225,9 @@ namespace FolderVision.Utils
             }
 
             var divisor = options.UnitSystem == FileSizeUnitSystem.Binary ? 1024.0 : 1000.0;
-            var multiplier = Math.Pow(divisor, unitIndex);
+            var multiplier = 1.0;
+            for (var j = 0; j < unitIndex; j++)
+                multiplier *= divisor;
             bytes = (long)(value * multiplier);
 
             return true;

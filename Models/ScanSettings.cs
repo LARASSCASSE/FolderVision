@@ -129,13 +129,13 @@ namespace FolderVision.Models
             {
                 SkipSystemFolders = true,
                 SkipHiddenFolders = true,
-                MaxThreads = 8, // More threads for better parallelization
-                MaxDepth = 100, // Higher depth limit
-                MaxMemoryUsageMB = 1024, // 1GB for large scans
+                MaxThreads = 16, // More threads for better parallelization
+                MaxDepth = 1000, // Higher depth limit for deep structures
+                MaxMemoryUsageMB = 4096, // 4GB for large scans
                 EnableMemoryOptimization = true,
-                GlobalTimeout = TimeSpan.FromHours(2), // Longer timeout for large scans
-                DirectoryTimeout = TimeSpan.FromSeconds(30), // More time per directory
-                NetworkDriveTimeout = TimeSpan.FromMinutes(2),
+                GlobalTimeout = TimeSpan.FromHours(10), // Longer timeout for large scans
+                DirectoryTimeout = TimeSpan.FromMinutes(5), // More time per directory
+                NetworkDriveTimeout = TimeSpan.FromMinutes(10),
                 EnableAdaptiveBatching = true, // Critical for large folders
                 MaxDirectoriesPerBatch = 50, // Smaller batches for memory efficiency
                 LoggingOptions = LoggingOptions.Verbose // More detailed logging for large scans
