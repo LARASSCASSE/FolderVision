@@ -323,7 +323,7 @@ namespace FolderVision.Wpf
             {
                 Title = "Save PDF Report",
                 Filter = "PDF Files (*.pdf)|*.pdf",
-                FileName = "FolderScan_Report.pdf",
+                FileName = BuildPdfFileName(_lastScanResult),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
             };
 
@@ -407,6 +407,31 @@ namespace FolderVision.Wpf
         private void SetStatus(string message)
         {
             StatusBarLabel.Text = message;
+        }
+
+        /// Builds a default PDF filename from the first scanned root path.
+        /// C:\Work                    → "FolderScan Report - C_Work.pdf"
+        /// C:\Users\Pascal\Documents  → "FolderScan Report - C_..._Documents.pdf"
+        private static string BuildPdfFileName(ScanResult result)
+        {
+            var path = result.RootFolders.FirstOrDefault()?.FullPath
+                       ?? result.ScannedPaths.FirstOrDefault();
+
+            if (string.IsNullOrEmpty(path))
+                return "FolderScan Report.pdf";
+
+            var parts = path.TrimEnd('\\', '/')
+                            .Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var label = parts.Length <= 2
+                ? path.TrimEnd('\\', '/')          // C:\Work  → "C:\Work"
+                : $"{parts[0]}\\...\\{parts[^1]}"; // deeper   → "C:\...\Documents"
+
+            // Sanitize characters not allowed in Windows filenames
+            foreach (var c in Path.GetInvalidFileNameChars())
+                label = label.Replace(c, '_');
+
+            return $"FolderScan Report - {label}.pdf";
         }
 
         private static string TruncatePath(string path, int maxLength)
