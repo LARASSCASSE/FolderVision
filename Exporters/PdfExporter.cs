@@ -116,7 +116,7 @@ namespace FolderVision.Exporters
 
         private void AddOverviewPage(ScanResult scanResult, FolderInfo root)
         {
-            AddCompactHeader(scanResult);
+            AddCompactHeader(scanResult, root.FullPath);
 
             Document.Add(new Paragraph("Folder Structure")
                 .SetFont(BoldFont).SetFontSize(13)
@@ -171,9 +171,9 @@ namespace FolderVision.Exporters
         // ─────────────────────────────────────────────────────────────────────
 
         /// Compact header used on every overview page (no AreaBreak at end).
-        private void AddCompactHeader(ScanResult scanResult)
+        private void AddCompactHeader(ScanResult scanResult, string rootPath = "")
         {
-            var title = _options.CustomTitle ?? "Folder Scan Report";
+            var title = _options.CustomTitle ?? BuildReportTitle(rootPath);
 
             // Title row
             var titleTable = new Table(2, true)
@@ -283,6 +283,26 @@ namespace FolderVision.Exporters
         // ─────────────────────────────────────────────────────────────────────
         //  Helpers
         // ─────────────────────────────────────────────────────────────────────
+
+        /// Builds the report title from the root path.
+        /// - 1 component deep (e.g. C:\Work)          → "Folder Scan Report - C:\Work"
+        /// - 2+ components deep (e.g. C:\Users\Pascal) → "Folder Scan Report - C:\...\Pascal"
+        private static string BuildReportTitle(string rootPath)
+        {
+            const string prefix = "Folder Scan Report";
+            if (string.IsNullOrEmpty(rootPath))
+                return prefix;
+
+            var parts = rootPath.TrimEnd('\\', '/')
+                                .Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length <= 2)
+                return $"{prefix} - {rootPath}";          // e.g. C:\Work
+
+            var drive    = parts[0];                       // "C:"
+            var lastName = parts[^1];                      // last segment
+            return $"{prefix} - {drive}\\...\\{lastName}";
+        }
 
         private static string FormatDuration(TimeSpan d) =>
             d.TotalSeconds < 60 ? $"{d.TotalSeconds:F1}s" : $"{d.TotalMinutes:F1}min";
