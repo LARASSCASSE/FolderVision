@@ -66,26 +66,36 @@ namespace FolderVision.Exporters
 
         private void GeneratePdf(ScanResult scanResult, string outputPath)
         {
-            using var writer = new PdfWriter(outputPath);
-            using var pdf = new PdfDocument(writer);
+            // Use an explicit FileStream so we own the OS handle.
+            // Document.Close() flushes iText8 content; the `using` on fileStream
+            // then guarantees the handle is released even if iText8 close is incomplete.
+            using var fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+            var writer = new PdfWriter(fileStream);
+            var pdf = new PdfDocument(writer);
             _document = new Document(pdf);
 
             _regularFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
             _boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
 
-            Document.SetFont(RegularFont);
-            Document.SetFontSize(_options.FontSize);
+            try
+            {
+                Document.SetFont(RegularFont);
+                Document.SetFontSize(_options.FontSize);
 
-            if (_options.IncludeHeader)
-                AddHeader(scanResult);
-            if (_options.IncludeStatistics)
-                AddSummary(scanResult);
-            if (_options.IncludeTableOfContents)
-                AddTableOfContents(scanResult);
-            if (_options.IncludeFolderTree)
-                AddFolderTree(scanResult);
-
-            Document.Close();
+                if (_options.IncludeHeader)
+                    AddHeader(scanResult);
+                if (_options.IncludeStatistics)
+                    AddSummary(scanResult);
+                if (_options.IncludeTableOfContents)
+                    AddTableOfContents(scanResult);
+                if (_options.IncludeFolderTree)
+                    AddFolderTree(scanResult);
+            }
+            finally
+            {
+                Document.Close(); // flushes PDF content and closes writer
+                // fileStream disposed by `using` — OS handle guaranteed released
+            }
         }
 
         private void AddHeader(ScanResult scanResult)
@@ -158,9 +168,13 @@ namespace FolderVision.Exporters
             statsTable.SetWidth(UnitValue.CreatePercentValue(100));
             statsTable.SetMarginBottom(20);
 
-            AddStatCard(statsTable, "📁 Total Folders", $"{scanResult.TotalFolders:N0}");
-            AddStatCard(statsTable, "📄 Total Files", $"{scanResult.TotalFiles:N0}");
-            AddStatCard(statsTable, "⏱️ Scan Duration", $"{scanResult.ScanDuration.TotalSeconds:F1}s");
+            var folderLabel = _options.UseEmojis ? "📁 Total Folders" : "Total Folders";
+            var fileLabel   = _options.UseEmojis ? "📄 Total Files"   : "Total Files";
+            var durLabel    = _options.UseEmojis ? "⏱ Scan Duration"  : "Scan Duration";
+
+            AddStatCard(statsTable, folderLabel, $"{scanResult.TotalFolders:N0}");
+            AddStatCard(statsTable, fileLabel,   $"{scanResult.TotalFiles:N0}");
+            AddStatCard(statsTable, durLabel,    $"{scanResult.ScanDuration.TotalSeconds:F1}s");
 
             Document.Add(statsTable);
         }
@@ -223,8 +237,10 @@ namespace FolderVision.Exporters
 
             foreach (var rootFolder in scanResult.RootFolders)
             {
-                var listItem = new ListItem($"{rootFolder.FullPath} (📁{rootFolder.SubFolderCount} | 📄{rootFolder.FileCount})");
-                tocList.Add(listItem);
+                var tocLine = _options.UseEmojis
+                    ? $"{rootFolder.FullPath} (📁{rootFolder.SubFolderCount} | 📄{rootFolder.FileCount})"
+                    : $"{rootFolder.FullPath} ({rootFolder.SubFolderCount} folders | {rootFolder.FileCount} files)";
+                tocList.Add(new ListItem(tocLine));
             }
 
             Document.Add(tocList);
@@ -276,17 +292,18 @@ namespace FolderVision.Exporters
 
             Document.Add(paragraph);
 
-            var maxDepth = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : 5;
-            if (folder.SubFolders.Count > 0 && depth < maxDepth)
+            // Recurse into children — depth limit already handled by the early return above.
+            // Fallback cap of 5 applies only when MaxTreeDepth == 0 (unlimited).
+            var effectiveMax = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : 5;
+            if (folder.SubFolders.Count > 0 && depth < effectiveMax)
             {
                 foreach (var subFolder in folder.SubFolders.OrderBy(f => f.Name))
-                {
                     AddFolderToPdf(subFolder, depth + 1);
-                }
             }
-            else if (folder.SubFolders.Count > 0)
+            else if (folder.SubFolders.Count > 0 && _options.MaxTreeDepth == 0)
             {
-                var moreText = $"{new string(' ', (depth + 1) * 4)}... {folder.SubFolders.Count} subfolders (max depth reached)";
+                // Only shown when running unlimited mode and hitting the soft cap of 5
+                var moreText = $"{new string(' ', (depth + 1) * 4)}... {folder.SubFolders.Count} more subfolder(s) (display limit reached)";
                 Document.Add(new Paragraph(moreText)
                     .SetFont(RegularFont)
                     .SetFontSize(9)

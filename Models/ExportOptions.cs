@@ -125,9 +125,11 @@ namespace FolderVision.Models
         public bool IncludeHeader { get; set; } = true;
 
         /// <summary>
-        /// Whether to use emojis in the report
+        /// Whether to use emojis in the report.
+        /// Disabled by default: standard PDF fonts (Helvetica) do not support Unicode emoji
+        /// and will render them as blank squares. Enable only if using an emoji-capable embedded font.
         /// </summary>
-        public bool UseEmojis { get; set; } = true;
+        public bool UseEmojis { get; set; } = false;
 
         /// <summary>
         /// Custom title for the report (null uses default)
