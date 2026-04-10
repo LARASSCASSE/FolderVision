@@ -263,7 +263,8 @@ namespace FolderVision.Wpf
             {
                 Header = header,
                 IsExpanded = false,
-                ToolTip = folder.FullPath
+                ToolTip = folder.FullPath,
+                Margin = isRoot ? new System.Windows.Thickness(0, 8, 0, 0) : new System.Windows.Thickness(0)
             };
 
             foreach (var sub in folder.SubFolders)
