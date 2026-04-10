@@ -49,7 +49,9 @@ namespace FolderVision.Tests
 
             Assert.Equal(ColorScheme.Default, options.ColorScheme);
             Assert.True(options.IncludeFolderTree);
-            Assert.True(options.IncludeStatistics);
+            Assert.False(options.IncludeStatistics);        // stats removed from default output
+            Assert.False(options.IncludeTableOfContents);  // TOC removed from default output
+            Assert.False(options.UseEmojis);               // HELVETICA can't render emoji
         }
 
         [Fact]

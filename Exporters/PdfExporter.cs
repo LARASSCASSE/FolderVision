@@ -249,67 +249,98 @@ namespace FolderVision.Exporters
 
         private void AddFolderTree(ScanResult scanResult)
         {
-            var icon = _options.UseEmojis ? "🌳 " : "";
-            Document.Add(new Paragraph($"{icon}Folder Structure")
+            // Page 2 header — compact, leaves room for the tree
+            Document.Add(new Paragraph("Folder Structure")
                 .SetFont(BoldFont)
-                .SetFontSize(18)
-                .SetMarginBottom(15));
+                .SetFontSize(14)
+                .SetMarginBottom(3));
 
-            foreach (var rootFolder in scanResult.RootFolders)
+            // One-line summary (replaces the removed statistics page)
+            var dur = scanResult.ScanDuration.TotalSeconds < 60
+                ? $"{scanResult.ScanDuration.TotalSeconds:F1}s"
+                : $"{scanResult.ScanDuration.TotalMinutes:F1}min";
+            Document.Add(new Paragraph(
+                    $"{scanResult.TotalFolders:N0} folders  |  {scanResult.TotalFiles:N0} files  |  {dur}")
+                .SetFont(RegularFont)
+                .SetFontSize(9)
+                .SetFontColor(ColorConstants.GRAY)
+                .SetMarginBottom(10));
+
+            var roots = scanResult.RootFolders;
+            for (var i = 0; i < roots.Count; i++)
             {
-                AddFolderToPdf(rootFolder, 0, true);
+                AddFolderToPdf(roots[i], 0, true);
+
+                if (i < roots.Count - 1)
+                {
+                    // Thin separator between root folders
+                    Document.Add(new Paragraph()
+                        .SetBorderBottom(new SolidBorder(new DeviceRgb(0.82f, 0.82f, 0.82f), 0.5f))
+                        .SetMarginTop(8)
+                        .SetMarginBottom(10));
+                }
             }
         }
 
         private void AddFolderToPdf(FolderInfo folder, int depth = 0, bool isRoot = false)
         {
+            if (_options.MaxTreeDepth > 0 && depth >= _options.MaxTreeDepth)
+                return;
+
             ReportProgress(folder.Name);
 
-            // Check max depth limit
-            if (_options.MaxTreeDepth > 0 && depth >= _options.MaxTreeDepth)
+            var displayName = isRoot
+                ? folder.FullPath
+                : (string.IsNullOrEmpty(folder.Name) ? folder.FullPath : folder.Name);
+
+            var sub = folder.SubFolders.Count;
+            var stats = $"{sub} {(sub == 1 ? "folder" : "folders")}  |  {folder.FileCount} files";
+
+            // Paragraph with tab-stop to right-align stats
+            var para = new Paragraph()
+                .SetMarginBottom(isRoot ? 5f : 1f)
+                .AddTabStops(new TabStop(510f, TabAlignment.RIGHT));
+
+            var nameIndent = depth == 0 ? "" : new string(' ', depth * 4);
+            var nameFontSize = isRoot ? 11f : (depth <= 2 ? 10f : 9f);
+
+            para.Add(new Text(nameIndent + displayName)
+                .SetFont(isRoot ? BoldFont : RegularFont)
+                .SetFontSize(nameFontSize));
+
+            para.Add(new Tab());
+
+            para.Add(new Text(stats)
+                .SetFont(RegularFont)
+                .SetFontSize(9f)
+                .SetFontColor(ColorConstants.GRAY));
+
+            if (isRoot)
             {
-                return;
+                para.SetBackgroundColor(new DeviceRgb(0.93f, 0.93f, 0.93f))
+                    .SetPaddingTop(5f)
+                    .SetPaddingBottom(5f)
+                    .SetPaddingLeft(8f)
+                    .SetPaddingRight(8f);
             }
 
-            var indent = new string(' ', depth * 4);
-            var displayName = isRoot ? folder.FullPath : folder.Name;
-            var folderIcon = _options.UseEmojis ? "📁" : "[DIR]";
-            var fileIcon = _options.UseEmojis ? "📄" : "";
-            var stats = _options.UseEmojis
-                ? $"({folderIcon}{folder.SubFolderCount} | {fileIcon}{folder.FileCount})"
-                : $"({folder.SubFolderCount} folders | {folder.FileCount} files)";
-            var folderText = $"{indent}{folderIcon} {displayName} {stats}";
+            Document.Add(para);
 
-            var paragraph = new Paragraph(folderText)
-                .SetFont(depth == 0 ? BoldFont : RegularFont)
-                .SetFontSize(depth == 0 ? 12 : 10)
-                .SetMarginBottom(2);
-
-            if (depth > 0)
-            {
-                paragraph.SetMarginLeft(depth * 10);
-            }
-
-            Document.Add(paragraph);
-
-            // Recurse into children — depth limit already handled by the early return above.
-            // Fallback cap of 5 applies only when MaxTreeDepth == 0 (unlimited).
-            var effectiveMax = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : 5;
+            var effectiveMax = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : 8;
             if (folder.SubFolders.Count > 0 && depth < effectiveMax)
             {
-                foreach (var subFolder in folder.SubFolders.OrderBy(f => f.Name))
-                    AddFolderToPdf(subFolder, depth + 1);
+                foreach (var child in folder.SubFolders.OrderBy(f => f.Name))
+                    AddFolderToPdf(child, depth + 1);
             }
-            else if (folder.SubFolders.Count > 0 && _options.MaxTreeDepth == 0)
+            else if (folder.SubFolders.Count > 0 && depth >= effectiveMax)
             {
-                // Only shown when running unlimited mode and hitting the soft cap of 5
-                var moreText = $"{new string(' ', (depth + 1) * 4)}... {folder.SubFolders.Count} more subfolder(s) (display limit reached)";
+                var moreText = new string(' ', (depth + 1) * 4)
+                    + $"... {folder.SubFolders.Count} more subfolder(s)";
                 Document.Add(new Paragraph(moreText)
                     .SetFont(RegularFont)
-                    .SetFontSize(9)
+                    .SetFontSize(9f)
                     .SetFontColor(ColorConstants.GRAY)
-                    .SetMarginLeft((depth + 1) * 10)
-                    .SetMarginBottom(2));
+                    .SetMarginBottom(1f));
             }
         }
 

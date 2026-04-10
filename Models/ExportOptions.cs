@@ -110,14 +110,14 @@ namespace FolderVision.Models
         public bool IncludeFolderTree { get; set; } = true;
 
         /// <summary>
-        /// Whether to include the statistics section
+        /// Whether to include the statistics section (disabled by default — key stats are shown inline on page 2)
         /// </summary>
-        public bool IncludeStatistics { get; set; } = true;
+        public bool IncludeStatistics { get; set; } = false;
 
         /// <summary>
-        /// Whether to include the table of contents
+        /// Whether to include the table of contents (disabled by default)
         /// </summary>
-        public bool IncludeTableOfContents { get; set; } = true;
+        public bool IncludeTableOfContents { get; set; } = false;
 
         /// <summary>
         /// Whether to include the header with scan info
@@ -142,9 +142,9 @@ namespace FolderVision.Models
         public FileSizeFormattingOptions FileSizeFormat { get; set; } = FileSizeFormattingOptions.Default;
 
         /// <summary>
-        /// Maximum depth to show in folder tree (0 = unlimited, recommended 5 for PDFs)
+        /// Maximum depth to show in folder tree (0 = unlimited)
         /// </summary>
-        public int MaxTreeDepth { get; set; } = 5;
+        public int MaxTreeDepth { get; set; } = 8;
 
         /// <summary>
         /// Font size for body text
