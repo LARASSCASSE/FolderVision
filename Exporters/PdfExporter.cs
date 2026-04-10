@@ -161,7 +161,7 @@ namespace FolderVision.Exporters
         {
             AddRootBlock(root);
 
-            var effectiveMax = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : 8;
+            var effectiveMax = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : int.MaxValue;
             foreach (var child in root.SubFolders.OrderBy(f => f.Name))
                 AddFolderToPdf(child, 1, effectiveMax);
         }

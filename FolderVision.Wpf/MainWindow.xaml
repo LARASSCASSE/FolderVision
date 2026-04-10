@@ -181,6 +181,48 @@
                                   FontSize="12"
                                   ToolTip="Skip folders with the System attribute"/>
 
+                        <!-- ── Separator ────────────────────────────────── -->
+                        <Separator Background="{StaticResource BorderBrush}"
+                                   Margin="0,8,0,14"/>
+
+                        <!-- Section: Export Settings -->
+                        <TextBlock Text="EXPORT SETTINGS"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="0,0,0,10"/>
+
+                        <!-- Report Depth -->
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Report Depth"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center"
+                                       FontSize="12"/>
+                            <TextBlock x:Name="ReportDepthLabel"
+                                       Grid.Column="1"
+                                       Text="2"
+                                       Foreground="{StaticResource AccentBlueBrush}"
+                                       FontWeight="SemiBold"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                        <Slider x:Name="ReportDepthSlider"
+                                Minimum="0" Maximum="10" Value="2"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                Margin="0,0,0,4"
+                                ValueChanged="ReportDepthSlider_ValueChanged"
+                                ToolTip="Number of subfolder levels shown in the PDF report (0 = show all levels)"/>
+                        <TextBlock Text="0 = show all levels"
+                                   FontSize="10"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="0,0,0,8"/>
+
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -195,19 +237,16 @@
             <!-- ──────────── CENTER PANEL ──────────── -->
             <Border Grid.Column="2"
                     Background="{StaticResource BackgroundDarkBrush}">
+                <!-- Single-layer Grid: all children share the full height.
+                     Scan controls are always centered in the total panel height.
+                     StatsBlock and Export buttons are pinned to the bottom. -->
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
 
-                    <!-- Scan controls (centered vertically) -->
-                    <StackPanel Grid.Row="0"
-                                VerticalAlignment="Center"
+                    <!-- Scan controls: centered in the FULL panel height, never move -->
+                    <StackPanel VerticalAlignment="Center"
                                 HorizontalAlignment="Center"
                                 Margin="20">
 
-                        <!-- Big Start button -->
                         <Button x:Name="StartScanButton"
                                 Content="▶  Start Scan"
                                 Style="{StaticResource BigScanButton}"
@@ -216,7 +255,6 @@
                                 IsEnabled="False"
                                 ToolTip="Start scanning the added paths"/>
 
-                        <!-- Cancel button -->
                         <Button x:Name="CancelScanButton"
                                 Content="■  Cancel"
                                 Style="{StaticResource DefaultButton}"
@@ -226,7 +264,6 @@
                                 Margin="0,0,0,24"
                                 ToolTip="Cancel the running scan"/>
 
-                        <!-- Progress bar -->
                         <ProgressBar x:Name="ScanProgressBar"
                                      Value="0"
                                      Maximum="100"
@@ -234,7 +271,6 @@
                                      Width="260"
                                      Margin="0,0,0,8"/>
 
-                        <!-- Progress label -->
                         <TextBlock x:Name="ProgressLabel"
                                    Text="No scan running"
                                    Foreground="{StaticResource TextMutedBrush}"
@@ -242,16 +278,22 @@
                                    TextAlignment="Center"
                                    HorizontalAlignment="Center"
                                    TextWrapping="Wrap"
-                                   MaxWidth="260"
-                                   Margin="0,0,0,24"/>
+                                   MaxWidth="260"/>
+                    </StackPanel>
 
-                        <!-- Stats block (visible after scan) -->
+                    <!-- Bottom zone: StatsBlock above Export buttons, both pinned to bottom -->
+                    <StackPanel VerticalAlignment="Bottom"
+                                HorizontalAlignment="Stretch"
+                                Margin="20,0,20,16">
+
+                        <!-- Stats block -->
                         <Border x:Name="StatsBlock"
                                 Background="{StaticResource BackgroundMediumBrush}"
                                 BorderBrush="{StaticResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Padding="16,12"
+                                Margin="0,0,0,12"
                                 Visibility="Collapsed">
                             <StackPanel>
                                 <TextBlock Text="SCAN RESULTS"
@@ -279,29 +321,27 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Export buttons -->
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+                            <Button x:Name="ExportHtmlButton"
+                                    Content="📄 Export HTML"
+                                    Style="{StaticResource DefaultButton}"
+                                    Click="ExportHtmlButton_Click"
+                                    IsEnabled="False"
+                                    Margin="0,0,8,0"
+                                    Height="34"
+                                    ToolTip="Export scan results as an HTML report"/>
+                            <Button x:Name="ExportPdfButton"
+                                    Content="📑 Export PDF"
+                                    Style="{StaticResource DefaultButton}"
+                                    Click="ExportPdfButton_Click"
+                                    IsEnabled="False"
+                                    Height="34"
+                                    ToolTip="Export scan results as a PDF report"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <!-- Export buttons at the bottom -->
-                    <StackPanel Grid.Row="1"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                Margin="0,0,0,16">
-                        <Button x:Name="ExportHtmlButton"
-                                Content="📄 Export HTML"
-                                Style="{StaticResource DefaultButton}"
-                                Click="ExportHtmlButton_Click"
-                                IsEnabled="False"
-                                Margin="0,0,8,0"
-                                Height="34"
-                                ToolTip="Export scan results as an HTML report"/>
-                        <Button x:Name="ExportPdfButton"
-                                Content="📑 Export PDF"
-                                Style="{StaticResource DefaultButton}"
-                                Click="ExportPdfButton_Click"
-                                IsEnabled="False"
-                                Height="34"
-                                ToolTip="Export scan results as a PDF report"/>
-                    </StackPanel>
                 </Grid>
             </Border>
 

@@ -109,6 +109,12 @@ namespace FolderVision.Wpf
             ThreadCountLabel.Text = ((int)e.NewValue).ToString();
         }
 
+        private void ReportDepthSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var depth = (int)e.NewValue;
+            ReportDepthLabel.Text = depth == 0 ? "All" : depth.ToString();
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         //  SCAN
         // ─────────────────────────────────────────────────────────────────────
@@ -221,7 +227,9 @@ namespace FolderVision.Wpf
 
             TotalFoldersLabel.Text = result.TotalFolders.ToString("N0");
             TotalFilesLabel.Text = result.TotalFiles.ToString("N0");
-            DurationLabel.Text = $"{result.ScanDuration.TotalSeconds:F2}s";
+            DurationLabel.Text = result.ScanDuration.TotalSeconds >= 60
+                ? $"{(int)result.ScanDuration.TotalMinutes}m {result.ScanDuration.Seconds:D2}s"
+                : $"{result.ScanDuration.TotalSeconds:F2}s";
             StatsBlock.Visibility = Visibility.Visible;
 
             PopulateTree(result);
@@ -264,7 +272,7 @@ namespace FolderVision.Wpf
                 Header = header,
                 IsExpanded = false,
                 ToolTip = folder.FullPath,
-                Margin = isRoot ? new System.Windows.Thickness(0, 8, 0, 0) : new System.Windows.Thickness(0)
+                Margin = isRoot ? new System.Windows.Thickness(0, 16, 0, 4) : new System.Windows.Thickness(0)
             };
 
             foreach (var sub in folder.SubFolders)
@@ -319,38 +327,84 @@ namespace FolderVision.Wpf
         {
             if (_lastScanResult == null) return;
 
-            var dialog = new Microsoft.Win32.SaveFileDialog
+            var roots = _lastScanResult.RootFolders;
+            var reportDepth = (int)ReportDepthSlider.Value;
+            var pdfOptions = new PdfExportOptions { MaxTreeDepth = reportDepth };
+
+            // Single root → one SaveFileDialog, one PDF (existing behaviour)
+            if (roots.Count <= 1)
             {
-                Title = "Save PDF Report",
-                Filter = "PDF Files (*.pdf)|*.pdf",
-                FileName = BuildPdfFileName(_lastScanResult),
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-            };
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Save PDF Report",
+                    Filter = "PDF Files (*.pdf)|*.pdf",
+                    FileName = BuildPdfFileName(_lastScanResult),
+                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                };
+                if (dialog.ShowDialog() != true) return;
 
-            if (dialog.ShowDialog() != true) return;
+                try
+                {
+                    ExportPdfButton.IsEnabled = false;
+                    SetStatus("Exporting PDF...");
+                    await new PdfExporter(pdfOptions).ExportAsync(_lastScanResult, dialog.FileName);
+                    SetStatus($"PDF exported: {dialog.FileName}");
+                    System.Windows.MessageBox.Show(
+                        $"PDF report saved to:\n{dialog.FileName}",
+                        "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Export failed:\n{ex.Message}",
+                        "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    SetStatus("PDF export failed.");
+                }
+                finally { ExportPdfButton.IsEnabled = _lastScanResult != null; }
+                return;
+            }
 
+            // Multiple roots → one SaveFileDialog per root, one PDF each
+            var exported = new List<string>();
             try
             {
                 ExportPdfButton.IsEnabled = false;
-                SetStatus("Exporting PDF...");
-                var exporter = new PdfExporter();
-                await exporter.ExportAsync(_lastScanResult, dialog.FileName);
-                SetStatus($"PDF exported: {dialog.FileName}");
-                System.Windows.MessageBox.Show(
-                    $"PDF report saved to:\n{dialog.FileName}",
-                    "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                for (int i = 0; i < roots.Count; i++)
+                {
+                    var root = roots[i];
+                    var singleResult = new ScanResult();
+                    singleResult.AddRootFolder(root);
+                    foreach (var p in _lastScanResult.ScannedPaths) singleResult.AddScannedPath(p);
+                    singleResult.UpdateTotals();
+
+                    var dialog = new Microsoft.Win32.SaveFileDialog
+                    {
+                        Title = $"Save PDF – scan {i + 1} of {roots.Count}: {root.FullPath}",
+                        Filter = "PDF Files (*.pdf)|*.pdf",
+                        FileName = BuildPdfFileNameFromPath(root.FullPath),
+                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                    };
+                    if (dialog.ShowDialog() != true) break;
+
+                    SetStatus($"Exporting PDF {i + 1}/{roots.Count}…");
+                    await new PdfExporter(pdfOptions).ExportAsync(singleResult, dialog.FileName);
+                    exported.Add(dialog.FileName);
+                }
+
+                if (exported.Count > 0)
+                {
+                    SetStatus($"{exported.Count} PDF(s) exported.");
+                    System.Windows.MessageBox.Show(
+                        $"{exported.Count} PDF report(s) saved:\n" + string.Join("\n", exported),
+                        "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show(
-                    $"Export failed:\n{ex.Message}",
+                System.Windows.MessageBox.Show($"Export failed:\n{ex.Message}",
                     "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 SetStatus("PDF export failed.");
             }
-            finally
-            {
-                ExportPdfButton.IsEnabled = _lastScanResult != null;
-            }
+            finally { ExportPdfButton.IsEnabled = _lastScanResult != null; }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -396,6 +450,7 @@ namespace FolderVision.Wpf
             ThreadsSlider.IsEnabled = !scanning;
             SkipHiddenCheckBox.IsEnabled = !scanning;
             SkipSystemCheckBox.IsEnabled = !scanning;
+            ReportDepthSlider.IsEnabled = !scanning;
         }
 
         private void UpdateProgress(int percent, string message)
@@ -416,6 +471,11 @@ namespace FolderVision.Wpf
         {
             var path = result.RootFolders.FirstOrDefault()?.FullPath
                        ?? result.ScannedPaths.FirstOrDefault();
+            return BuildPdfFileNameFromPath(path);
+        }
+
+        private static string BuildPdfFileNameFromPath(string? path)
+        {
 
             if (string.IsNullOrEmpty(path))
                 return "FolderScan Report.pdf";
