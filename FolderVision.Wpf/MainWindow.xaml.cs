@@ -27,6 +27,14 @@ namespace FolderVision.Wpf
             PathsListBox.SelectionChanged += PathsListBox_SelectionChanged;
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            PathsListBox.SelectionChanged -= PathsListBox_SelectionChanged;
+            if (_scanEngine != null && _progressHandler != null)
+                _scanEngine.ProgressChanged -= _progressHandler;
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         //  PATH MANAGEMENT
         // ─────────────────────────────────────────────────────────────────────
@@ -89,8 +97,7 @@ namespace FolderVision.Wpf
 
         private void PathsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (RemovePathButton != null)
-                RemovePathButton.IsEnabled = PathsListBox.SelectedItem != null && !_isScanning;
+            RemovePathButton.IsEnabled = PathsListBox.SelectedItem != null && !_isScanning;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -99,8 +106,7 @@ namespace FolderVision.Wpf
 
         private void ThreadsSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (ThreadCountLabel != null)
-                ThreadCountLabel.Text = ((int)e.NewValue).ToString();
+            ThreadCountLabel.Text = ((int)e.NewValue).ToString();
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -142,8 +148,9 @@ namespace FolderVision.Wpf
 
             _progressHandler = (s, args) =>
             {
-                Dispatcher.Invoke(() =>
-                    UpdateProgress(Math.Min(100, args.PercentComplete), TruncatePath(args.CurrentPath, 60)));
+                var pct = Math.Min(100, args.PercentComplete);
+                var msg = TruncatePath(args.CurrentPath, 60);
+                Dispatcher.InvokeAsync(() => UpdateProgress(pct, msg));
             };
             _scanEngine.ProgressChanged += _progressHandler;
 

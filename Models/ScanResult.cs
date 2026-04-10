@@ -69,7 +69,11 @@ namespace FolderVision.Models
             if (string.IsNullOrEmpty(path))
                 return null;
 
-            foreach (var rootFolder in RootFolders)
+            List<FolderInfo> snapshot;
+            lock (_lockObject)
+                snapshot = new List<FolderInfo>(RootFolders);
+
+            foreach (var rootFolder in snapshot)
             {
                 if (rootFolder.FullPath.Equals(path, StringComparison.OrdinalIgnoreCase))
                     return rootFolder;
@@ -99,13 +103,15 @@ namespace FolderVision.Models
 
         public IEnumerable<FolderInfo> GetAllFolders()
         {
-            foreach (var rootFolder in RootFolders)
+            List<FolderInfo> snapshot;
+            lock (_lockObject)
+                snapshot = new List<FolderInfo>(RootFolders);
+
+            foreach (var rootFolder in snapshot)
             {
                 yield return rootFolder;
                 foreach (var subFolder in rootFolder.GetAllSubFolders())
-                {
                     yield return subFolder;
-                }
             }
         }
 

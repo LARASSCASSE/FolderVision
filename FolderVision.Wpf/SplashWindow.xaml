@@ -59,7 +59,7 @@
                         Canvas.Left="-80">
                     <Border.Triggers>
                         <EventTrigger RoutedEvent="Loaded">
-                            <BeginStoryboard>
+                            <BeginStoryboard x:Name="LoadingBarStoryboard">
                                 <Storyboard RepeatBehavior="Forever">
                                     <DoubleAnimation
                                         Storyboard.TargetName="LoadingBar"
@@ -68,6 +68,9 @@
                                         Duration="0:0:1.2"/>
                                 </Storyboard>
                             </BeginStoryboard>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="Unloaded">
+                            <StopStoryboard BeginStoryboardName="LoadingBarStoryboard"/>
                         </EventTrigger>
                     </Border.Triggers>
                 </Border>

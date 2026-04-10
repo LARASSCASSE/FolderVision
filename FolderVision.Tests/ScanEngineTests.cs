@@ -85,19 +85,30 @@ namespace FolderVision.Tests
         }
 
         [Fact]
-        public void ScanEngine_ProgressChanged_FiresEvent()
+        public async Task ScanEngine_ProgressChanged_FiresDuringRealScan()
         {
             var engine = new ScanEngine();
+            var settings = ScanSettings.CreateDefault();
+            settings.LoggingOptions = LoggingOptions.Disabled;
             bool eventFired = false;
 
-            engine.ProgressChanged += (sender, e) =>
-            {
-                eventFired = true;
-            };
+            engine.ProgressChanged += (sender, e) => { eventFired = true; };
 
-            // Event will fire during actual scan
-            Assert.NotNull(engine);
-            Assert.False(eventFired); // Not fired yet without a scan
+            var tempDir = Path.Combine(Path.GetTempPath(), "FolderVisionProgressTest_" + Guid.NewGuid());
+            Directory.CreateDirectory(tempDir);
+            // Create a few subdirectories so progress events are likely to fire
+            for (int i = 0; i < 5; i++)
+                Directory.CreateDirectory(Path.Combine(tempDir, $"Sub{i}"));
+
+            try
+            {
+                await engine.ScanFolderAsync(tempDir, settings);
+                Assert.True(eventFired, "ProgressChanged should have fired during a real scan");
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
         }
     }
 }
