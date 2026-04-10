@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Projects\\FolderVision\\FolderVision.Tests\\FolderVision.Tests.csproj": {}
+    "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj": {}
   },
   "projects": {
-    "D:\\Projects\\FolderVision\\FolderVision.csproj": {
+    "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\FolderVision\\FolderVision.csproj",
+        "projectUniqueName": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj",
         "projectName": "FolderVision",
-        "projectPath": "D:\\Projects\\FolderVision\\FolderVision.csproj",
+        "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj",
         "packagesPath": "C:\\Users\\Pascal\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\FolderVision\\obj\\",
+        "outputPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Pascal\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -49,9 +49,9 @@
               "target": "Package",
               "version": "[8.0.5, )"
             },
-            "itext7.bouncy-castle-adapter": {
+            "itext.bouncy-castle-adapter": {
               "target": "Package",
-              "version": "[9.3.0, )"
+              "version": "[8.0.5, )"
             }
           },
           "imports": [
@@ -97,14 +97,14 @@
         }
       }
     },
-    "D:\\Projects\\FolderVision\\FolderVision.Tests\\FolderVision.Tests.csproj": {
+    "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\FolderVision\\FolderVision.Tests\\FolderVision.Tests.csproj",
+        "projectUniqueName": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
         "projectName": "FolderVision.Tests",
-        "projectPath": "D:\\Projects\\FolderVision\\FolderVision.Tests\\FolderVision.Tests.csproj",
+        "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
         "packagesPath": "C:\\Users\\Pascal\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\FolderVision\\FolderVision.Tests\\obj\\",
+        "outputPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Pascal\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -119,8 +119,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\Projects\\FolderVision\\FolderVision.csproj": {
-                "projectPath": "D:\\Projects\\FolderVision\\FolderVision.csproj"
+              "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj": {
+                "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj"
               }
             }
           }

@@ -18,11 +18,11 @@
           "FolderVision.Tests.dll": {}
         }
       },
-      "BouncyCastle.Cryptography/2.6.2": {
+      "BouncyCastle.Cryptography/2.2.1": {
         "runtime": {
           "lib/net6.0/BouncyCastle.Cryptography.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.6.2.46322"
+            "fileVersion": "2.2.1.47552"
           }
         }
       },
@@ -43,7 +43,7 @@
           "System.Threading.Thread": "4.3.0",
           "System.Threading.ThreadPool": "4.3.0",
           "System.Xml.XmlDocument": "4.3.0",
-          "itext.commons": "9.3.0"
+          "itext.commons": "8.0.5"
         },
         "runtime": {
           "lib/netstandard2.0/itext.barcodes.dll": {
@@ -92,38 +92,33 @@
           }
         }
       },
-      "itext.bouncy-castle-adapter/9.3.0": {
+      "itext.bouncy-castle-adapter/8.0.5": {
         "dependencies": {
-          "BouncyCastle.Cryptography": "2.6.2",
-          "itext.commons": "9.3.0"
+          "BouncyCastle.Cryptography": "2.2.1",
+          "itext.commons": "8.0.5"
         },
         "runtime": {
           "lib/netstandard2.0/itext.bouncy-castle-adapter.dll": {
-            "assemblyVersion": "9.3.0.0",
-            "fileVersion": "9.3.0.0"
+            "assemblyVersion": "8.0.5.0",
+            "fileVersion": "8.0.5.0"
           }
         }
       },
-      "itext.commons/9.3.0": {
+      "itext.commons/8.0.5": {
         "dependencies": {
           "Microsoft.Extensions.Logging": "5.0.0",
-          "System.Text.Json": "9.0.4"
+          "Newtonsoft.Json": "13.0.1"
         },
         "runtime": {
           "lib/netstandard2.0/itext.commons.dll": {
-            "assemblyVersion": "9.3.0.0",
-            "fileVersion": "9.3.0.0"
+            "assemblyVersion": "8.0.5.0",
+            "fileVersion": "8.0.5.0"
           }
         }
       },
       "itext7/8.0.5": {
         "dependencies": {
           "itext": "8.0.5"
-        }
-      },
-      "itext7.bouncy-castle-adapter/9.3.0": {
-        "dependencies": {
-          "itext.bouncy-castle-adapter": "9.3.0"
         }
       },
       "Microsoft.CodeCoverage/17.12.0": {
@@ -949,7 +944,6 @@
           "System.Text.Encoding": "4.3.0"
         }
       },
-      "System.Text.Json/9.0.4": {},
       "System.Text.RegularExpressions/4.3.1": {
         "dependencies": {
           "System.Runtime": "4.3.1"
@@ -1075,7 +1069,7 @@
       "FolderVision/1.0.0": {
         "dependencies": {
           "itext7": "8.0.5",
-          "itext7.bouncy-castle-adapter": "9.3.0"
+          "itext.bouncy-castle-adapter": "8.0.5"
         },
         "runtime": {
           "FolderVision.dll": {
@@ -1092,12 +1086,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "BouncyCastle.Cryptography/2.6.2": {
+    "BouncyCastle.Cryptography/2.2.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
-      "path": "bouncycastle.cryptography/2.6.2",
-      "hashPath": "bouncycastle.cryptography.2.6.2.nupkg.sha512"
+      "sha512": "sha512-A6Zr52zVqJKt18ZBsTnX0qhG0kwIQftVAjLmszmkiR/trSp8H+xj1gUOzk7XHwaKgyREMSV1v9XaKrBUeIOdvQ==",
+      "path": "bouncycastle.cryptography/2.2.1",
+      "hashPath": "bouncycastle.cryptography.2.2.1.nupkg.sha512"
     },
     "coverlet.collector/6.0.2": {
       "type": "package",
@@ -1113,19 +1107,19 @@
       "path": "itext/8.0.5",
       "hashPath": "itext.8.0.5.nupkg.sha512"
     },
-    "itext.bouncy-castle-adapter/9.3.0": {
+    "itext.bouncy-castle-adapter/8.0.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-C7q8wbwDyc2npzKBRF46KnueJON6in3QEdPlsz7VvXDqClRF1C0VfE6HwVCpJJ5Q5qADNSYNbtXFZgD7T1/51g==",
-      "path": "itext.bouncy-castle-adapter/9.3.0",
-      "hashPath": "itext.bouncy-castle-adapter.9.3.0.nupkg.sha512"
+      "sha512": "sha512-mam0CtYkKmVwdX7wU1Zlg9oVW0B9efMASfAEIm+fQGovc9HcplsmP3MylS+VmQHbYlCNSH68DQlVhDz6Cu9WxQ==",
+      "path": "itext.bouncy-castle-adapter/8.0.5",
+      "hashPath": "itext.bouncy-castle-adapter.8.0.5.nupkg.sha512"
     },
-    "itext.commons/9.3.0": {
+    "itext.commons/8.0.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-kSoAGkXjI0vASBREnT1rvhUae1xQX2jd/W5ot0pmaqeurzpVGP04u10Mk0DqZZBTDaF5p/g9KRFnqxhjfOE2hA==",
-      "path": "itext.commons/9.3.0",
-      "hashPath": "itext.commons.9.3.0.nupkg.sha512"
+      "sha512": "sha512-exnLqeWOnn0Ee393bHf3zWTmcYuQfYuj7iIbMluG49XFczMWMMXrN9UvMmt5iYOKq0mGZsYb1eRoVATGuDiXGQ==",
+      "path": "itext.commons/8.0.5",
+      "hashPath": "itext.commons.8.0.5.nupkg.sha512"
     },
     "itext7/8.0.5": {
       "type": "package",
@@ -1133,13 +1127,6 @@
       "sha512": "sha512-/1btEFYY+ncIR7j/g+pr26PX8Nbly8pbdDWfSHQq9E/rbxhz0ylkOLVpXNEvoaV545q508P8hociHaRiRG7bwg==",
       "path": "itext7/8.0.5",
       "hashPath": "itext7.8.0.5.nupkg.sha512"
-    },
-    "itext7.bouncy-castle-adapter/9.3.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-B8I9+xX+96T1+CTKeXq0UlWSMQcGigUkzqaQSXJT6RmfkK1zTVxDJDw5RdmwziY4xdPWZspnC+IHWICBJUfvyQ==",
-      "path": "itext7.bouncy-castle-adapter/9.3.0",
-      "hashPath": "itext7.bouncy-castle-adapter.9.3.0.nupkg.sha512"
     },
     "Microsoft.CodeCoverage/17.12.0": {
       "type": "package",
@@ -1644,13 +1631,6 @@
       "sha512": "sha512-YVMK0Bt/A43RmwizJoZ22ei2nmrhobgeiYwFzC4YAN+nue8RF6djXDMog0UCn+brerQoYVyaS+ghy9P/MUVcmw==",
       "path": "system.text.encoding.extensions/4.3.0",
       "hashPath": "system.text.encoding.extensions.4.3.0.nupkg.sha512"
-    },
-    "System.Text.Json/9.0.4": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-pYtmpcO6R3Ef1XilZEHgXP2xBPVORbYEzRP7dl0IAAbN8Dm+kfwio8aCKle97rAWXOExr292MuxWYurIuwN62g==",
-      "path": "system.text.json/9.0.4",
-      "hashPath": "system.text.json.9.0.4.nupkg.sha512"
     },
     "System.Text.RegularExpressions/4.3.1": {
       "type": "package",

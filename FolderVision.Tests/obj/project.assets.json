@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net9.0": {
-      "BouncyCastle.Cryptography/2.6.2": {
+      "BouncyCastle.Cryptography/2.2.1": {
         "type": "package",
         "compile": {
           "lib/net6.0/BouncyCastle.Cryptography.dll": {
@@ -111,11 +111,11 @@
           }
         }
       },
-      "itext.bouncy-castle-adapter/9.3.0": {
+      "itext.bouncy-castle-adapter/8.0.5": {
         "type": "package",
         "dependencies": {
-          "BouncyCastle.Cryptography": "2.6.2",
-          "itext.commons": "9.3.0"
+          "BouncyCastle.Cryptography": "2.2.1",
+          "itext.commons": "8.0.5"
         },
         "compile": {
           "lib/netstandard2.0/itext.bouncy-castle-adapter.dll": {
@@ -128,11 +128,11 @@
           }
         }
       },
-      "itext.commons/9.3.0": {
+      "itext.commons/8.0.5": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Logging": "5.0.0",
-          "System.Text.Json": "9.0.4"
+          "Newtonsoft.Json": "13.0.1"
         },
         "compile": {
           "lib/netstandard2.0/itext.commons.dll": {
@@ -149,12 +149,6 @@
         "type": "package",
         "dependencies": {
           "itext": "8.0.5"
-        }
-      },
-      "itext7.bouncy-castle-adapter/9.3.0": {
-        "type": "package",
-        "dependencies": {
-          "itext.bouncy-castle-adapter": "9.3.0"
         }
       },
       "Microsoft.CodeCoverage/17.12.0": {
@@ -1555,22 +1549,6 @@
           }
         }
       },
-      "System.Text.Json/9.0.4": {
-        "type": "package",
-        "compile": {
-          "lib/net9.0/System.Text.Json.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net9.0/System.Text.Json.dll": {
-            "related": ".xml"
-          }
-        },
-        "build": {
-          "buildTransitive/net8.0/System.Text.Json.targets": {}
-        }
-      },
       "System.Text.RegularExpressions/4.3.1": {
         "type": "package",
         "dependencies": {
@@ -1810,7 +1788,7 @@
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
           "iText7": "8.0.5",
-          "itext7.bouncy-castle-adapter": "9.3.0"
+          "itext.bouncy-castle-adapter": "8.0.5"
         },
         "compile": {
           "bin/placeholder/FolderVision.dll": {}
@@ -1822,16 +1800,16 @@
     }
   },
   "libraries": {
-    "BouncyCastle.Cryptography/2.6.2": {
-      "sha512": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+    "BouncyCastle.Cryptography/2.2.1": {
+      "sha512": "A6Zr52zVqJKt18ZBsTnX0qhG0kwIQftVAjLmszmkiR/trSp8H+xj1gUOzk7XHwaKgyREMSV1v9XaKrBUeIOdvQ==",
       "type": "package",
-      "path": "bouncycastle.cryptography/2.6.2",
+      "path": "bouncycastle.cryptography/2.2.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.md",
         "README.md",
-        "bouncycastle.cryptography.2.6.2.nupkg.sha512",
+        "bouncycastle.cryptography.2.2.1.nupkg.sha512",
         "bouncycastle.cryptography.nuspec",
         "lib/net461/BouncyCastle.Cryptography.dll",
         "lib/net461/BouncyCastle.Cryptography.xml",
@@ -1970,15 +1948,15 @@
         "lib/netstandard2.0/itext.svg.xml"
       ]
     },
-    "itext.bouncy-castle-adapter/9.3.0": {
-      "sha512": "C7q8wbwDyc2npzKBRF46KnueJON6in3QEdPlsz7VvXDqClRF1C0VfE6HwVCpJJ5Q5qADNSYNbtXFZgD7T1/51g==",
+    "itext.bouncy-castle-adapter/8.0.5": {
+      "sha512": "mam0CtYkKmVwdX7wU1Zlg9oVW0B9efMASfAEIm+fQGovc9HcplsmP3MylS+VmQHbYlCNSH68DQlVhDz6Cu9WxQ==",
       "type": "package",
-      "path": "itext.bouncy-castle-adapter/9.3.0",
+      "path": "itext.bouncy-castle-adapter/8.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "ITSC-avatar.png",
-        "itext.bouncy-castle-adapter.9.3.0.nupkg.sha512",
+        "itext.bouncy-castle-adapter.8.0.5.nupkg.sha512",
         "itext.bouncy-castle-adapter.nuspec",
         "lib/net461/itext.bouncy-castle-adapter.dll",
         "lib/net461/itext.bouncy-castle-adapter.xml",
@@ -1986,15 +1964,15 @@
         "lib/netstandard2.0/itext.bouncy-castle-adapter.xml"
       ]
     },
-    "itext.commons/9.3.0": {
-      "sha512": "kSoAGkXjI0vASBREnT1rvhUae1xQX2jd/W5ot0pmaqeurzpVGP04u10Mk0DqZZBTDaF5p/g9KRFnqxhjfOE2hA==",
+    "itext.commons/8.0.5": {
+      "sha512": "exnLqeWOnn0Ee393bHf3zWTmcYuQfYuj7iIbMluG49XFczMWMMXrN9UvMmt5iYOKq0mGZsYb1eRoVATGuDiXGQ==",
       "type": "package",
-      "path": "itext.commons/9.3.0",
+      "path": "itext.commons/8.0.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "ITSC-avatar.png",
-        "itext.commons.9.3.0.nupkg.sha512",
+        "itext.commons.8.0.5.nupkg.sha512",
         "itext.commons.nuspec",
         "lib/net461/itext.commons.dll",
         "lib/net461/itext.commons.xml",
@@ -2014,20 +1992,6 @@
         "gnu-agpl-v3.0.md",
         "itext7.8.0.5.nupkg.sha512",
         "itext7.nuspec"
-      ]
-    },
-    "itext7.bouncy-castle-adapter/9.3.0": {
-      "sha512": "B8I9+xX+96T1+CTKeXq0UlWSMQcGigUkzqaQSXJT6RmfkK1zTVxDJDw5RdmwziY4xdPWZspnC+IHWICBJUfvyQ==",
-      "type": "package",
-      "path": "itext7.bouncy-castle-adapter/9.3.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "ITSC-avatar.png",
-        "LICENSE.md",
-        "gnu-agpl-v3.0.md",
-        "itext7.bouncy-castle-adapter.9.3.0.nupkg.sha512",
-        "itext7.bouncy-castle-adapter.nuspec"
       ]
     },
     "Microsoft.CodeCoverage/17.12.0": {
@@ -5036,77 +5000,6 @@
         "system.text.encoding.extensions.nuspec"
       ]
     },
-    "System.Text.Json/9.0.4": {
-      "sha512": "pYtmpcO6R3Ef1XilZEHgXP2xBPVORbYEzRP7dl0IAAbN8Dm+kfwio8aCKle97rAWXOExr292MuxWYurIuwN62g==",
-      "type": "package",
-      "path": "system.text.json/9.0.4",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "Icon.png",
-        "LICENSE.TXT",
-        "PACKAGE.md",
-        "THIRD-PARTY-NOTICES.TXT",
-        "analyzers/dotnet/roslyn3.11/cs/System.Text.Json.SourceGeneration.dll",
-        "analyzers/dotnet/roslyn3.11/cs/cs/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/de/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/es/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/fr/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/it/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/ja/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/ko/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/pl/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/pt-BR/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/ru/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/tr/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/zh-Hans/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn3.11/cs/zh-Hant/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/System.Text.Json.SourceGeneration.dll",
-        "analyzers/dotnet/roslyn4.0/cs/cs/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/de/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/es/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/fr/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/it/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/ja/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/ko/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/pl/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/pt-BR/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/ru/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/tr/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/zh-Hans/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.0/cs/zh-Hant/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/System.Text.Json.SourceGeneration.dll",
-        "analyzers/dotnet/roslyn4.4/cs/cs/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/de/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/es/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/fr/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/it/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/ja/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/ko/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/pl/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/pt-BR/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/ru/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/tr/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/zh-Hans/System.Text.Json.SourceGeneration.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/zh-Hant/System.Text.Json.SourceGeneration.resources.dll",
-        "buildTransitive/net461/System.Text.Json.targets",
-        "buildTransitive/net462/System.Text.Json.targets",
-        "buildTransitive/net8.0/System.Text.Json.targets",
-        "buildTransitive/netcoreapp2.0/System.Text.Json.targets",
-        "buildTransitive/netstandard2.0/System.Text.Json.targets",
-        "lib/net462/System.Text.Json.dll",
-        "lib/net462/System.Text.Json.xml",
-        "lib/net8.0/System.Text.Json.dll",
-        "lib/net8.0/System.Text.Json.xml",
-        "lib/net9.0/System.Text.Json.dll",
-        "lib/net9.0/System.Text.Json.xml",
-        "lib/netstandard2.0/System.Text.Json.dll",
-        "lib/netstandard2.0/System.Text.Json.xml",
-        "system.text.json.9.0.4.nupkg.sha512",
-        "system.text.json.nuspec",
-        "useSharedDesignerContext.txt"
-      ]
-    },
     "System.Text.RegularExpressions/4.3.1": {
       "sha512": "N0kNRrWe4+nXOWlpLT4LAY5brb8caNFlUuIRpraCVMDLYutKkol1aV079rQjLuSxKMJT2SpBQsYX9xbcTMmzwg==",
       "type": "package",
@@ -5703,11 +5596,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\FolderVision\\FolderVision.Tests\\FolderVision.Tests.csproj",
+      "projectUniqueName": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
       "projectName": "FolderVision.Tests",
-      "projectPath": "D:\\Projects\\FolderVision\\FolderVision.Tests\\FolderVision.Tests.csproj",
+      "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
       "packagesPath": "C:\\Users\\Pascal\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\FolderVision\\FolderVision.Tests\\obj\\",
+      "outputPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Pascal\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -5722,8 +5615,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "D:\\Projects\\FolderVision\\FolderVision.csproj": {
-              "projectPath": "D:\\Projects\\FolderVision\\FolderVision.csproj"
+            "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj": {
+              "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj"
             }
           }
         }

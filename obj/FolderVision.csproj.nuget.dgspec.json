@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Projects\\FolderVision\\FolderVision.csproj": {}
+    "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj": {}
   },
   "projects": {
-    "D:\\Projects\\FolderVision\\FolderVision.csproj": {
+    "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\FolderVision\\FolderVision.csproj",
+        "projectUniqueName": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj",
         "projectName": "FolderVision",
-        "projectPath": "D:\\Projects\\FolderVision\\FolderVision.csproj",
+        "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj",
         "packagesPath": "C:\\Users\\Pascal\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\FolderVision\\obj\\",
+        "outputPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Pascal\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -28,11 +28,6 @@
             "projectReferences": {}
           }
         },
-        "warningProperties": {
-          "warnAsError": [
-            "NU1605"
-          ]
-        },
         "restoreAuditProperties": {
           "enableAudit": "true",
           "auditLevel": "low",
@@ -44,13 +39,19 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.9, )",
+              "autoReferenced": true
+            },
             "iText7": {
               "target": "Package",
               "version": "[8.0.5, )"
             },
-            "itext7.bouncy-castle-adapter": {
+            "itext.bouncy-castle-adapter": {
               "target": "Package",
-              "version": "[9.3.0, )"
+              "version": "[8.0.5, )"
             }
           },
           "imports": [
@@ -67,6 +68,10 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+              "version": "[9.0.9, 9.0.9]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Crossgen2.win-x64",
               "version": "[9.0.9, 9.0.9]"
             },
             {
