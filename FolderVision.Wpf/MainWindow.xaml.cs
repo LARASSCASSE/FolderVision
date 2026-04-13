@@ -344,6 +344,14 @@ namespace FolderVision.Wpf
             var reportDepth = (int)ReportDepthSlider.Value;
             var pdfOptions = new PdfExportOptions { MaxTreeDepth = reportDepth };
 
+            // If "Preview before export" is checked, open the interactive preview window
+            if (PreviewBeforeExportCheckBox.IsChecked == true)
+            {
+                var preview = new ExportPreviewWindow(_lastScanResult, pdfOptions) { Owner = this };
+                preview.ShowDialog();
+                return; // ExportPreviewWindow handles SaveFileDialogs and PDF generation
+            }
+
             // Single root → one SaveFileDialog, one PDF (existing behaviour)
             if (roots.Count <= 1)
             {

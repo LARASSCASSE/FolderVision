@@ -274,7 +274,15 @@
                         <TextBlock Text="0 = show all levels"
                                    FontSize="10"
                                    Foreground="{StaticResource TextMutedBrush}"
-                                   Margin="0,0,0,8"/>
+                                   Margin="0,0,0,12"/>
+
+                        <!-- Preview before export -->
+                        <CheckBox x:Name="PreviewBeforeExportCheckBox"
+                                  Content="Preview before export"
+                                  FontSize="12"
+                                  Foreground="{StaticResource TextSecondaryBrush}"
+                                  Margin="0,0,0,4"
+                                  ToolTip="Open an interactive preview to select and rename folders before generating the PDF"/>
 
                     </StackPanel>
                 </ScrollViewer>
