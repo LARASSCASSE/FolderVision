@@ -27,6 +27,19 @@ namespace FolderVision.Wpf
             PathsListBox.SelectionChanged += PathsListBox_SelectionChanged;
         }
 
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+            => Close();
+
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
@@ -272,7 +285,7 @@ namespace FolderVision.Wpf
                 Header = header,
                 IsExpanded = false,
                 ToolTip = folder.FullPath,
-                Margin = isRoot ? new System.Windows.Thickness(0, 16, 0, 4) : new System.Windows.Thickness(0)
+                Margin = isRoot ? new System.Windows.Thickness(0, 40, 0, 4) : new System.Windows.Thickness(0)
             };
 
             foreach (var sub in folder.SubFolders)
