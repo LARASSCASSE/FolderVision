@@ -71,6 +71,8 @@
     <None Include="FolderVision.Wpf/**" />
     <EmbeddedResource Remove="FolderVision.Wpf/**" />
     <Page Remove="FolderVision.Wpf/**" />
+    <Compile Remove="FolderVisionLauncher/**" />
+    <None Include="FolderVisionLauncher/**" />
   </ItemGroup>
 
 </Project>

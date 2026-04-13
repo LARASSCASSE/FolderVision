@@ -10,10 +10,15 @@
     <AssemblyTitle>FolderVision</AssemblyTitle>
     <AssemblyDescription>FolderVision WPF GUI</AssemblyDescription>
     <RootNamespace>FolderVision.Wpf</RootNamespace>
+    <ApplicationIcon>Ressources\app.ico</ApplicationIcon>
     <!-- Match main project: self-contained win-x64 so project reference works -->
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Ressources\app.ico"/>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FolderVision.csproj" />
