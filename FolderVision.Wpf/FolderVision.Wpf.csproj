@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Resource Include="Ressources\app.ico"/>
+    <Resource Include="Ressources\foldervision_icon-removebg.png"/>
   </ItemGroup>
 
   <ItemGroup>

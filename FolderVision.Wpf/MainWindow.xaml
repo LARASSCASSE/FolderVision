@@ -37,10 +37,12 @@
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="16,0,120,0">
-                    <TextBlock Text="📁"
-                               FontSize="22"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
+                    <Image Source="Ressources/foldervision_icon-removebg.png"
+                           Height="22"
+                           Width="22"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
                     <TextBlock Text="FolderVision"
                                FontSize="18"
                                FontWeight="Bold"
