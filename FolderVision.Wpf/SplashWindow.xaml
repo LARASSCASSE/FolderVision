@@ -19,10 +19,12 @@
 
         <!-- Icon + Title -->
         <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="📁"
-                       FontSize="44"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,10"/>
+            <Image Source="Ressources/foldervision_icon-removebg.png"
+                   Height="44"
+                   Width="44"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,10"/>
             <TextBlock Text="FolderVision"
                        FontSize="26"
                        FontWeight="Bold"
