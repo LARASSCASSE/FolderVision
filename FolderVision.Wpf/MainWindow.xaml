@@ -413,14 +413,32 @@
                           Background="{StaticResource BorderBrush}"
                           Cursor="SizeWE"/>
 
-            <!-- ──────────── RIGHT PANEL (Tabs) ──────────── -->
+            <!-- ──────────── RIGHT PANEL (Tree) ──────────── -->
             <Border Grid.Column="4"
                     Background="{StaticResource BackgroundMediumBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1,0,0,0">
                 <Grid>
-                    <!-- Placeholder when no tabs -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Tree panel header -->
+                    <Border Grid.Row="0"
+                            Background="{StaticResource BackgroundLightBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <TextBlock Text="Folder Structure"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </Border>
+
+                    <!-- Placeholder when no scan -->
                     <TextBlock x:Name="TreePlaceholder"
+                               Grid.Row="1"
                                Text="Run a scan to view the folder structure here."
                                Foreground="{StaticResource TextMutedBrush}"
                                FontSize="13"
@@ -429,13 +447,15 @@
                                TextAlignment="Center"
                                TextWrapping="Wrap"
                                MaxWidth="240"
-                               Margin="16"
-                               Panel.ZIndex="1"/>
+                               Margin="16"/>
 
-                    <!-- One tab per scan -->
-                    <TabControl x:Name="ScanTabControl"
-                                Visibility="Collapsed"
-                                SelectionChanged="ScanTabControl_SelectionChanged"/>
+                    <!-- Actual TreeView -->
+                    <TreeView x:Name="FolderTreeView"
+                              Grid.Row="1"
+                              Margin="4"
+                              Visibility="Collapsed"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"/>
                 </Grid>
             </Border>
         </Grid>

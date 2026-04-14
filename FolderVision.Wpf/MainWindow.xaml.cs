@@ -18,7 +18,6 @@ namespace FolderVision.Wpf
         private ScanEngine? _scanEngine;
         private ScanResult? _lastScanResult;
         private bool _isScanning;
-        private readonly Dictionary<TabItem, ScanResult> _tabScanResults = new();
 
         // Track current handler to avoid stale subscriptions
         private EventHandler<ProgressEventArgs>? _progressHandler;
@@ -153,6 +152,8 @@ namespace FolderVision.Wpf
             SetScanningState(true);
             UpdateProgress(0, "Starting scan...");
             StatsBlock.Visibility = Visibility.Collapsed;
+            FolderTreeView.Items.Clear();
+            FolderTreeView.Visibility = Visibility.Collapsed;
             TreePlaceholder.Visibility = Visibility.Visible;
             ExportHtmlButton.IsEnabled = false;
             ExportPdfButton.IsEnabled = false;
@@ -245,7 +246,7 @@ namespace FolderVision.Wpf
                 : $"{result.ScanDuration.TotalSeconds:F2}s";
             StatsBlock.Visibility = Visibility.Visible;
 
-            AddScanTab(result);
+            PopulateTree(result);
 
             ExportHtmlButton.IsEnabled = true;
             ExportPdfButton.IsEnabled = true;
@@ -255,78 +256,21 @@ namespace FolderVision.Wpf
         //  TREE VIEW
         // ─────────────────────────────────────────────────────────────────────
 
-        private void AddScanTab(ScanResult result)
+        private void PopulateTree(ScanResult result)
         {
-            var title = BuildTabTitle(result);
+            FolderTreeView.Items.Clear();
 
-            // Create the TreeView for this tab
-            var tree = new System.Windows.Controls.TreeView { Margin = new Thickness(4), BorderThickness = new Thickness(0) };
-            foreach (var root in result.RootFolders)
+            foreach (var rootFolder in result.RootFolders)
+                FolderTreeView.Items.Add(BuildTreeItem(rootFolder, isRoot: true));
+
+            if (FolderTreeView.Items.Count > 0)
             {
-                var item = BuildTreeItem(root, isRoot: true);
-                tree.Items.Add(item);
-                item.IsExpanded = true;
+                TreePlaceholder.Visibility = Visibility.Collapsed;
+                FolderTreeView.Visibility = Visibility.Visible;
+
+                foreach (TreeViewItem item in FolderTreeView.Items)
+                    item.IsExpanded = true;
             }
-
-            // Build tab header: title + close button
-            var headerPanel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
-            headerPanel.Children.Add(new System.Windows.Controls.TextBlock
-            {
-                Text = title,
-                VerticalAlignment = VerticalAlignment.Center,
-                FontSize = 12
-            });
-
-            var tab = new TabItem { Content = tree };
-
-            var closeBtn = new System.Windows.Controls.Button
-            {
-                Content = "×",
-                Style = (System.Windows.Style)FindResource("TabCloseButton"),
-                ToolTip = "Close tab"
-            };
-            closeBtn.Click += (_, _) => CloseTab(tab);
-            headerPanel.Children.Add(closeBtn);
-            tab.Header = headerPanel;
-
-            // Register before adding so SelectionChanged can read it
-            _tabScanResults[tab] = result;
-            ScanTabControl.Items.Add(tab);
-            ScanTabControl.SelectedItem = tab;
-
-            TreePlaceholder.Visibility = Visibility.Collapsed;
-            ScanTabControl.Visibility = Visibility.Visible;
-        }
-
-        private void CloseTab(TabItem tab)
-        {
-            _tabScanResults.Remove(tab);
-            ScanTabControl.Items.Remove(tab);
-
-            if (ScanTabControl.Items.Count == 0)
-            {
-                ScanTabControl.Visibility = Visibility.Collapsed;
-                TreePlaceholder.Visibility = Visibility.Visible;
-                _lastScanResult = null;
-                ExportHtmlButton.IsEnabled = false;
-                ExportPdfButton.IsEnabled = false;
-            }
-        }
-
-        private void ScanTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ScanTabControl.SelectedItem is TabItem tab && _tabScanResults.TryGetValue(tab, out var result))
-                _lastScanResult = result;
-        }
-
-        private static string BuildTabTitle(ScanResult result)
-        {
-            var names = result.RootFolders
-                .Select(r => Path.GetFileName(r.FullPath.TrimEnd('\\', '/')) is { Length: > 0 } n ? n : r.FullPath)
-                .ToList();
-            if (names.Count == 0) return "Scan";
-            if (names.Count == 1) return names[0];
-            return $"{names[0]} +{names.Count - 1}";
         }
 
         private TreeViewItem BuildTreeItem(FolderInfo folder, bool isRoot = false)
