@@ -521,6 +521,14 @@ namespace FolderVision.Wpf
                             singleResult.AddScannedPath(p);
                     singleResult.UpdateTotals();
 
+                    // Per-tab options (inherit base options + tab-specific IncludeHeader)
+                    var tabOptions = new PdfExportOptions
+                    {
+                        MaxTreeDepth    = pdfOptions.MaxTreeDepth,
+                        IncludeHeader   = previewContent.IncludeHeader,
+                        IncludeFolderTree = pdfOptions.IncludeFolderTree
+                    };
+
                     var dialog = new Microsoft.Win32.SaveFileDialog
                     {
                         Title = total > 1 ? $"Save PDF — scan {i + 1} of {total}" : "Save PDF Report",
@@ -531,7 +539,7 @@ namespace FolderVision.Wpf
                     if (dialog.ShowDialog() != true) continue;
 
                     SetStatus($"Exporting PDF {i + 1}/{total}…");
-                    await new PdfExporter(pdfOptions).ExportAsync(singleResult, dialog.FileName);
+                    await new PdfExporter(tabOptions).ExportAsync(singleResult, dialog.FileName);
                     exported.Add(dialog.FileName);
                 }
 

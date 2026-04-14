@@ -8,6 +8,7 @@ namespace FolderVision.Wpf.Models
     public class PreviewNode : INotifyPropertyChanged
     {
         private bool _isIncluded = true;
+        private bool _isExpanded = true;
         private string _displayName = string.Empty;
 
         public string OriginalName { get; set; } = string.Empty;
@@ -22,6 +23,12 @@ namespace FolderVision.Wpf.Models
             set { _displayName = value; OnPropertyChanged(); }
         }
 
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set { _isExpanded = value; OnPropertyChanged(); }
+        }
+
         public bool IsIncluded
         {
             get => _isIncluded;
@@ -30,15 +37,17 @@ namespace FolderVision.Wpf.Models
                 if (_isIncluded == value) return;
                 _isIncluded = value;
                 OnPropertyChanged();
-                // Cascade to children
                 if (!value)
+                {
+                    // Collapse this node and cascade uncheck to children
+                    IsExpanded = false;
                     foreach (var child in Children)
                         child.IsIncluded = false;
+                }
             }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

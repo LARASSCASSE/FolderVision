@@ -9,7 +9,7 @@
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Node label style -->
+            <!-- Node label -->
             <Style x:Key="PreviewNodeLabel" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="#FFFFFFFF"/>
                 <Setter Property="FontSize" Value="12"/>
@@ -23,7 +23,7 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- Node editor style -->
+            <!-- Node inline editor -->
             <Style x:Key="PreviewNodeEditor" TargetType="TextBox">
                 <Setter Property="Background" Value="#FF2D2D30"/>
                 <Setter Property="Foreground" Value="#FFFFFFFF"/>
@@ -37,14 +37,18 @@
                 <Setter Property="MinWidth" Value="160"/>
             </Style>
 
-            <!-- HierarchicalDataTemplate for PreviewNode -->
+            <!-- TreeViewItem: bind IsExpanded to PreviewNode.IsExpanded -->
+            <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+            </Style>
+
+            <!-- HierarchicalDataTemplate -->
             <HierarchicalDataTemplate DataType="{x:Type local:PreviewNode}"
                                       ItemsSource="{Binding Children}">
-                <StackPanel Orientation="Horizontal" Margin="0,1">
+                <StackPanel Orientation="Horizontal" Margin="0,2">
                     <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay}"
-                              VerticalAlignment="Center"
-                              Margin="0,0,5,0"
-                              Focusable="False"/>
+                              Style="{StaticResource DarkCheckBox}"
+                              Margin="0,0,6,0"/>
                     <TextBlock Text="{Binding DisplayName}"
                                Style="{StaticResource PreviewNodeLabel}"
                                MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"
@@ -58,8 +62,36 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <TreeView x:Name="PreviewTree"
-              Background="#FF252526"
-              BorderThickness="0"
-              Margin="4"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header options bar -->
+        <Border Grid.Row="0"
+                Background="#FF2D2D30"
+                BorderBrush="#FF4A4A4D"
+                BorderThickness="0,0,0,1"
+                Padding="10,7">
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="IncludeHeaderCheckBox"
+                          Style="{StaticResource DarkCheckBox}"
+                          IsChecked="True"
+                          Margin="0,0,8,0"/>
+                <TextBlock Text="Include header in PDF"
+                           FontSize="12"
+                           Foreground="#FFB0B0B0"
+                           VerticalAlignment="Center"
+                           FontFamily="Segoe UI"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Preview tree -->
+        <TreeView x:Name="PreviewTree"
+                  Grid.Row="1"
+                  Background="#FF252526"
+                  BorderThickness="0"
+                  Margin="4"/>
+    </Grid>
 </UserControl>

@@ -480,6 +480,47 @@
         </Setter>
     </Style>
 
+    <!-- Dark themed CheckBox (used in preview tabs) -->
+    <Style x:Key="DarkCheckBox" TargetType="CheckBox">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="CheckBorder"
+                            Width="15" Height="15"
+                            Background="#FF2D2D30"
+                            BorderBrush="#FF4A4A4D"
+                            BorderThickness="1"
+                            CornerRadius="3">
+                        <TextBlock x:Name="Checkmark"
+                                   Text="✓"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckBorder" Property="Background" Value="{StaticResource AccentBlueBrush}"/>
+                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{StaticResource AccentBlueBrush}"/>
+                            <Setter TargetName="Checkmark" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{StaticResource AccentBlueBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="CheckBorder" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Tab close button -->
     <Style x:Key="TabCloseButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>

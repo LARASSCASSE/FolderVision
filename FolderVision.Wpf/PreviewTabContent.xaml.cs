@@ -14,6 +14,7 @@ namespace FolderVision.Wpf
     public partial class PreviewTabContent : WpfUserControl
     {
         public PreviewNode? RootNode { get; private set; }
+        public bool IncludeHeader => IncludeHeaderCheckBox.IsChecked == true;
 
         public PreviewTabContent()
         {
