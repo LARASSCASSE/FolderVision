@@ -1,13 +1,15 @@
 <UserControl x:Class="FolderVision.Wpf.PreviewTabContent"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:FolderVision.Wpf.Models">
+             xmlns:local="clr-namespace:FolderVision.Wpf.Models"
+             xmlns:conv="clr-namespace:FolderVision.Wpf.Converters">
 
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <conv:InverseBoolConverter x:Key="InverseBool"/>
 
             <!-- Node label -->
             <Style x:Key="PreviewNodeLabel" TargetType="TextBlock">
@@ -46,7 +48,8 @@
             <HierarchicalDataTemplate DataType="{x:Type local:PreviewNode}"
                                       ItemsSource="{Binding Children}">
                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                    <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay}"
+                    <!-- Unchecked = included (empty box) | Checked = excluded (shows ×) -->
+                    <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay, Converter={StaticResource InverseBool}}"
                               Style="{StaticResource DarkCheckBox}"
                               Margin="0,0,6,0"/>
                     <TextBlock Text="{Binding DisplayName}"

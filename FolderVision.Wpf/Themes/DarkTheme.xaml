@@ -480,7 +480,8 @@
         </Setter>
     </Style>
 
-    <!-- Dark themed CheckBox (used in preview tabs) -->
+    <!-- Dark themed CheckBox (used in preview tabs)
+         Unchecked = included (empty box)  |  Checked = excluded (× drawn with Path) -->
     <Style x:Key="DarkCheckBox" TargetType="CheckBox">
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -494,23 +495,25 @@
                             BorderBrush="#FF4A4A4D"
                             BorderThickness="1"
                             CornerRadius="3">
-                        <TextBlock x:Name="Checkmark"
-                                   Text="✓"
-                                   FontSize="10"
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Visibility="Collapsed"/>
+                        <!-- × drawn with geometry — no emoji -->
+                        <Path x:Name="CrossMark"
+                              Data="M3,3 L11,11 M11,3 L3,11"
+                              Stroke="#FFB0B0B0"
+                              StrokeThickness="1.5"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Visibility="Collapsed"/>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <!-- Checked = excluded → show X, darken border -->
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="CheckBorder" Property="Background" Value="#FF4A4A4D"/>
                             <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#FF6A6A6D"/>
-                            <Setter TargetName="Checkmark" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="CrossMark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#FF7A7A7D"/>
+                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#FF8A8A8D"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="CheckBorder" Property="Opacity" Value="0.4"/>
