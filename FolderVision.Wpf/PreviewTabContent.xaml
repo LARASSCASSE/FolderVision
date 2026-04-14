@@ -80,13 +80,24 @@
             <StackPanel Orientation="Horizontal">
                 <CheckBox x:Name="IncludeHeaderCheckBox"
                           Style="{StaticResource DarkCheckBox}"
-                          IsChecked="True"
+                          IsChecked="False"
                           Margin="0,0,8,0"/>
-                <TextBlock Text="Include header in PDF"
+                <TextBlock Text="Header PDF"
                            FontSize="12"
-                           Foreground="#FFB0B0B0"
                            VerticalAlignment="Center"
-                           FontFamily="Segoe UI"/>
+                           FontFamily="Segoe UI">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="#FFB0B0B0"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=IncludeHeaderCheckBox}" Value="True">
+                                    <Setter Property="Foreground" Value="#FF505050"/>
+                                    <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </StackPanel>
         </Border>
 

@@ -21,13 +21,17 @@ namespace FolderVision.Wpf
         // Preview tabs: index 0 in RightTabControl = "Folder Structure" (fixed), 1..N = preview tabs
         private readonly List<TabItem> _previewTabs = new();
 
+        // Tab strip scroll
+        private System.Windows.Controls.ScrollViewer? _tabHeaderScroll;
+        private System.Windows.Controls.Button? _tabScrollLeftBtn;
+        private System.Windows.Controls.Button? _tabScrollRightBtn;
+
         // Track current handler to avoid stale subscriptions
         private EventHandler<ProgressEventArgs>? _progressHandler;
 
         public MainWindow()
         {
             InitializeComponent();
-            PathsListBox.SelectionChanged += PathsListBox_SelectionChanged;
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -46,7 +50,6 @@ namespace FolderVision.Wpf
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            PathsListBox.SelectionChanged -= PathsListBox_SelectionChanged;
             if (_scanEngine != null && _progressHandler != null)
                 _scanEngine.ProgressChanged -= _progressHandler;
         }
@@ -55,65 +58,160 @@ namespace FolderVision.Wpf
         //  PATH MANAGEMENT
         // ─────────────────────────────────────────────────────────────────────
 
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
-        {
-            using var dialog = new FolderBrowserDialog
-            {
-                Description = "Select a folder to scan",
-                UseDescriptionForTitle = true,
-                ShowNewFolderButton = false
-            };
-
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                PathInputBox.Text = dialog.SelectedPath;
-        }
-
         private void AddPathButton_Click(object sender, RoutedEventArgs e)
         {
-            var path = PathInputBox.Text.Trim();
-            if (string.IsNullOrEmpty(path))
+            var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                SetStatus("Please enter or browse for a folder path.");
-                return;
-            }
+                Title = "Select one or more folders to scan",
+                Multiselect = true
+            };
 
-            if (!Directory.Exists(path))
-            {
-                SetStatus($"Path does not exist: {path}");
-                System.Windows.MessageBox.Show(
-                    $"The path does not exist:\n{path}",
-                    "Invalid Path", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (dialog.ShowDialog() != true) return;
 
-            foreach (var item in PathsListBox.Items)
-            {
-                if (string.Equals(item.ToString(), path, StringComparison.OrdinalIgnoreCase))
-                {
-                    SetStatus("Path already in list.");
-                    return;
-                }
-            }
-
-            PathsListBox.Items.Add(path);
-            PathInputBox.Clear();
-            UpdateStartButtonState();
-            SetStatus($"Added: {path}");
+            var added = AddFolderPaths(dialog.FolderNames);
+            if (added > 0)
+                SetStatus(added == 1 ? $"Added: {dialog.FolderNames[0]}" : $"{added} paths added.");
         }
 
-        private void RemovePathButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>Adds a list of folder paths, skipping duplicates and non-existent ones.</summary>
+        private int AddFolderPaths(IEnumerable<string> paths)
         {
-            if (PathsListBox.SelectedItem is string selected)
+            var added = 0;
+            foreach (var path in paths)
             {
-                PathsListBox.Items.Remove(selected);
+                if (!Directory.Exists(path)) continue;
+
+                var duplicate = false;
+                foreach (var item in PathsListBox.Items)
+                    if (string.Equals(item.ToString(), path, StringComparison.OrdinalIgnoreCase))
+                    { duplicate = true; break; }
+
+                if (!duplicate)
+                {
+                    PathsListBox.Items.Add(path);
+                    added++;
+                }
+            }
+            if (added > 0) UpdateStartButtonState();
+            return added;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  DRAG & DROP
+        // ─────────────────────────────────────────────────────────────────────
+
+        private int _dragEnterCount;
+
+        private void Window_DragEnter(object sender, System.Windows.DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)) { e.Effects = System.Windows.DragDropEffects.None; return; }
+            _dragEnterCount++;
+            if (_dragEnterCount == 1) DragOverlay.Visibility = Visibility.Visible;
+            e.Effects = System.Windows.DragDropEffects.Copy;
+            e.Handled = true;
+        }
+
+        private void Window_DragOver(object sender, System.Windows.DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)
+                ? System.Windows.DragDropEffects.Copy : System.Windows.DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void Window_DragLeave(object sender, System.Windows.DragEventArgs e)
+        {
+            _dragEnterCount = Math.Max(0, _dragEnterCount - 1);
+            if (_dragEnterCount == 0) DragOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void Window_Drop(object sender, System.Windows.DragEventArgs e)
+        {
+            _dragEnterCount = 0;
+            DragOverlay.Visibility = Visibility.Collapsed;
+
+            if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)) return;
+            var paths = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+            var added = AddFolderPaths(paths);
+            SetStatus(added == 0 ? "No new folders added." :
+                      added == 1 ? $"Added: {paths.First(Directory.Exists)}" :
+                                   $"{added} folders added.");
+            e.Handled = true;
+        }
+
+        private void RemovePathItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is string path)
+            {
+                PathsListBox.Items.Remove(path);
                 UpdateStartButtonState();
                 SetStatus("Path removed.");
             }
         }
 
-        private void PathsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void PathsListBox_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+            => System.Windows.Controls.ScrollViewer.SetHorizontalScrollBarVisibility(PathsListBox, System.Windows.Controls.ScrollBarVisibility.Auto);
+
+        private void PathsListBox_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+            => System.Windows.Controls.ScrollViewer.SetHorizontalScrollBarVisibility(PathsListBox, System.Windows.Controls.ScrollBarVisibility.Hidden);
+
+        private void PathsListBox_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
-            RemovePathButton.IsEnabled = PathsListBox.SelectedItem != null && !_isScanning;
+            var sv = FindScrollViewer(PathsListBox);
+            if (sv == null) return;
+
+            if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Shift)
+                sv.ScrollToHorizontalOffset(sv.HorizontalOffset - e.Delta / 3.0);
+            else
+                sv.ScrollToVerticalOffset(sv.VerticalOffset - e.Delta / 3.0);
+
+            e.Handled = true;
+        }
+
+        // ── WM_MOUSEHWHEEL hook — precision trackpad horizontal swipe ────────
+        private const int WM_MOUSEHWHEEL = 0x020E;
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            var source = System.Windows.Interop.HwndSource.FromHwnd(
+                new System.Windows.Interop.WindowInteropHelper(this).Handle);
+            source?.AddHook(WndProc);
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_MOUSEHWHEEL)
+            {
+                // Positive delta = scroll right, negative = scroll left
+                var delta = (short)(wParam.ToInt64() >> 16);
+                var sv = FindScrollViewer(PathsListBox);
+                if (sv != null && IsElementUnderMouse(PathsListBox))
+                {
+                    sv.ScrollToHorizontalOffset(sv.HorizontalOffset + delta / 3.0);
+                    handled = true;
+                }
+            }
+            return IntPtr.Zero;
+        }
+
+        private bool IsElementUnderMouse(UIElement element)
+        {
+            var pos = System.Windows.Input.Mouse.GetPosition(element);
+            return pos.X >= 0 && pos.Y >= 0
+                && pos.X <= element.RenderSize.Width
+                && pos.Y <= element.RenderSize.Height;
+        }
+
+        private static System.Windows.Controls.ScrollViewer? FindScrollViewer(DependencyObject parent)
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is System.Windows.Controls.ScrollViewer sv) return sv;
+                var result = FindScrollViewer(child);
+                if (result != null) return result;
+            }
+            return null;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -280,6 +378,40 @@ namespace FolderVision.Wpf
         //  PREVIEW TABS
         // ─────────────────────────────────────────────────────────────────────
 
+        private void RightTabControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            _tabHeaderScroll  = RightTabControl.Template.FindName("TabHeaderScroll",  RightTabControl) as System.Windows.Controls.ScrollViewer;
+            _tabScrollLeftBtn = RightTabControl.Template.FindName("TabScrollLeftBtn", RightTabControl) as System.Windows.Controls.Button;
+            _tabScrollRightBtn= RightTabControl.Template.FindName("TabScrollRightBtn",RightTabControl) as System.Windows.Controls.Button;
+
+            if (_tabHeaderScroll != null)
+                _tabHeaderScroll.ScrollChanged += (_, _) => UpdateTabNavButtons();
+
+            UpdateTabNavButtons();
+        }
+
+        private void UpdateTabNavButtons()
+        {
+            if (_tabHeaderScroll == null) return;
+            if (_tabScrollLeftBtn  != null)
+                _tabScrollLeftBtn.Visibility  = _tabHeaderScroll.HorizontalOffset > 0
+                    ? Visibility.Visible : Visibility.Collapsed;
+            if (_tabScrollRightBtn != null)
+                _tabScrollRightBtn.Visibility = _tabHeaderScroll.HorizontalOffset < _tabHeaderScroll.ScrollableWidth
+                    ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void TabScrollLeft_Click(object sender, RoutedEventArgs e)
+            => _tabHeaderScroll?.ScrollToHorizontalOffset(
+                Math.Max(0, _tabHeaderScroll.HorizontalOffset - 160));
+
+        private void TabScrollRight_Click(object sender, RoutedEventArgs e)
+        {
+            if (_tabHeaderScroll == null) return;
+            _tabHeaderScroll.ScrollToHorizontalOffset(
+                Math.Min(_tabHeaderScroll.ScrollableWidth, _tabHeaderScroll.HorizontalOffset + 160));
+        }
+
         private void RefreshPreviewTabs(ScanResult result)
         {
             // Remove old preview tabs
@@ -302,6 +434,8 @@ namespace FolderVision.Wpf
                 _previewTabs.Add(tab);
                 RightTabControl.Items.Add(tab);
             }
+
+            Dispatcher.InvokeAsync(UpdateTabNavButtons, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private System.Windows.FrameworkElement BuildPreviewTabHeader(string title, TabItem tab)
@@ -339,6 +473,7 @@ namespace FolderVision.Wpf
             {
                 _previewTabs.Remove(tab);
                 RightTabControl.Items.Remove(tab);
+                Dispatcher.InvokeAsync(UpdateTabNavButtons, System.Windows.Threading.DispatcherPriority.Loaded);
             };
             panel.Children.Add(closeBtn);
 
@@ -599,9 +734,6 @@ namespace FolderVision.Wpf
             StartScanButton.IsEnabled = !scanning && PathsListBox.Items.Count > 0;
             CancelScanButton.IsEnabled = scanning;
             AddPathButton.IsEnabled = !scanning;
-            BrowseButton.IsEnabled = !scanning;
-            RemovePathButton.IsEnabled = !scanning && PathsListBox.SelectedItem != null;
-            PathInputBox.IsEnabled = !scanning;
             ThreadsSlider.IsEnabled = !scanning;
             SkipHiddenCheckBox.IsEnabled = !scanning;
             SkipSystemCheckBox.IsEnabled = !scanning;

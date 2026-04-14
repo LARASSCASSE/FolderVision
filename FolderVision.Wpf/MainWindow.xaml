@@ -9,7 +9,12 @@
         Background="{StaticResource BackgroundDarkBrush}"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        AllowDrop="True"
+        DragEnter="Window_DragEnter"
+        DragOver="Window_DragOver"
+        DragLeave="Window_DragLeave"
+        Drop="Window_Drop">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="52"
                             ResizeBorderThickness="6"
@@ -35,23 +40,23 @@
             <Grid>
                 <!-- App title — left side (draggable area via WindowChrome CaptionHeight) -->
                 <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center"
+                            VerticalAlignment="Top"
                             Margin="16,0,120,0">
                     <Image Source="Ressources/foldervision_icon-removebg.png"
                            Height="38"
                            Width="38"
                            RenderOptions.BitmapScalingMode="HighQuality"
-                           VerticalAlignment="Center"
+                           VerticalAlignment="Top"
                            Margin="0,0,8,0"/>
                     <TextBlock Text="FolderVision"
                                FontSize="18"
                                FontWeight="Bold"
                                Foreground="{StaticResource TextPrimaryBrush}"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Top"/>
                     <TextBlock Text="  |  Multi-threaded folder scanner"
                                FontSize="13"
                                Foreground="{StaticResource TextMutedBrush}"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Top"/>
                 </StackPanel>
 
                 <!-- Window control buttons — right side -->
@@ -114,178 +119,196 @@
                     Background="{StaticResource BackgroundMediumBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="0,0,1,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="12,14,12,12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <!-- SCAN PATHS — plus grande que les autres -->
+                        <RowDefinition Height="1.6*"/>
+                        <!-- SCAN SETTINGS -->
+                        <RowDefinition Height="*"/>
+                        <!-- EXPORT SETTINGS -->
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                        <!-- Section: Paths -->
-                        <TextBlock Text="SCAN PATHS"
+                    <!-- ── SCAN PATHS ── -->
+                    <Grid Grid.Row="0" Margin="12,14,12,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Text="SCAN PATHS"
                                    FontSize="10"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource TextMutedBrush}"
-
                                    Margin="0,0,0,8"/>
 
-                        <!-- Path input row -->
-                        <Grid Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="6"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="PathInputBox"
-                                     Grid.Column="0"
-                                     Height="32"
-                                     VerticalContentAlignment="Center"
-                                     Tag="Folder path..."
-                                     ToolTip="Enter a folder path to scan"/>
-                            <Button Grid.Column="2"
-                                    x:Name="BrowseButton"
-                                    Content="Browse"
-                                    Height="32"
-                                    Style="{StaticResource DefaultButton}"
-                                    Click="BrowseButton_Click"
-                                    ToolTip="Browse for a folder"/>
-                        </Grid>
+                        <!-- Added paths list -->
+                        <ListBox x:Name="PathsListBox"
+                                 Grid.Row="1"
+                                 Margin="0,0,0,6"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                 ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                 ScrollViewer.PanningMode="Both"
+                                 PreviewMouseWheel="PathsListBox_PreviewMouseWheel"
+                                 MouseEnter="PathsListBox_MouseEnter"
+                                 MouseLeave="PathsListBox_MouseLeave">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Padding" Value="6,3"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding}"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Top"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding}"/>
+                                        <Button Grid.Column="1"
+                                                Content="×"
+                                                FontSize="13"
+                                                Click="RemovePathItem_Click"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="6,0,2,0"
+                                                Cursor="Hand"
+                                                Focusable="False"
+                                                VerticalAlignment="Top">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Foreground" Value="#FF606060"/>
+                                                    <Setter Property="Visibility" Value="Hidden"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Foreground" Value="#FFDDDDDD"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
 
-                        <!-- Add path button -->
+                        <!-- Add path button — below the list -->
                         <Button x:Name="AddPathButton"
+                                Grid.Row="2"
                                 Content="+ Add Path"
                                 Height="32"
                                 Style="{StaticResource DefaultButton}"
                                 Click="AddPathButton_Click"
-                                Margin="0,0,0,8"
-                                ToolTip="Add the entered path to the scan list"/>
-
-                        <!-- Added paths list -->
-                        <TextBlock Text="Added paths:"
-                                   FontSize="11"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   Margin="0,0,0,4"/>
-                        <ListBox x:Name="PathsListBox"
-                                 Height="120"
-                                 Margin="0,0,0,6"
-                                 ToolTip="Paths to scan. Select one and press Delete to remove."/>
-
-                        <!-- Remove selected path -->
-                        <Button x:Name="RemovePathButton"
-                                Content="Remove Selected"
-                                Height="28"
-                                Style="{StaticResource DefaultButton}"
-                                Click="RemovePathButton_Click"
-                                Margin="0,0,0,16"
-                                FontSize="11"
-                                IsEnabled="False"/>
-
-                        <!-- Separator -->
-                        <Separator Background="{StaticResource BorderBrush}" Margin="0,0,0,14"/>
-
-                        <!-- Section: Settings -->
-                        <TextBlock Text="SCAN SETTINGS"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextMutedBrush}"
-
-                                   Margin="0,0,0,10"/>
-
-                        <!-- Threads slider -->
-                        <Grid Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="Max Threads"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center"
-                                       FontSize="12"/>
-                            <TextBlock x:Name="ThreadCountLabel"
-                                       Grid.Column="1"
-                                       Text="8"
-                                       Foreground="{StaticResource AccentBlueBrush}"
-                                       FontWeight="SemiBold"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                        <Slider x:Name="ThreadsSlider"
-                                Minimum="1"
-                                Maximum="32"
-                                Value="8"
-                                TickFrequency="1"
-                                IsSnapToTickEnabled="True"
                                 Margin="0,0,0,12"
-                                ValueChanged="ThreadsSlider_ValueChanged"
-                                ToolTip="Number of parallel scan threads (1-32)"/>
+                                ToolTip="Browse and select one or more folders to scan"/>
+                    </Grid>
 
-                        <!-- Skip Hidden -->
-                        <CheckBox x:Name="SkipHiddenCheckBox"
-                                  Content="Skip Hidden Folders"
-                                  IsChecked="True"
-                                  Margin="0,0,0,8"
-                                  Foreground="{StaticResource TextSecondaryBrush}"
-                                  FontSize="12"
-                                  ToolTip="Skip folders with the Hidden attribute"/>
-
-                        <!-- Skip System -->
-                        <CheckBox x:Name="SkipSystemCheckBox"
-                                  Content="Skip System Folders"
-                                  IsChecked="True"
-                                  Margin="0,0,0,8"
-                                  Foreground="{StaticResource TextSecondaryBrush}"
-                                  FontSize="12"
-                                  ToolTip="Skip folders with the System attribute"/>
-
-                        <!-- ── Separator ────────────────────────────────── -->
-                        <Separator Background="{StaticResource BorderBrush}"
-                                   Margin="0,8,0,14"/>
-
-                        <!-- Section: Export Settings -->
-                        <TextBlock Text="EXPORT SETTINGS"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   Margin="0,0,0,10"/>
-
-                        <!-- Report Depth -->
-                        <Grid Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="Report Depth"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center"
-                                       FontSize="12"/>
-                            <TextBlock x:Name="ReportDepthLabel"
-                                       Grid.Column="1"
-                                       Text="2"
-                                       Foreground="{StaticResource AccentBlueBrush}"
+                    <!-- ── SCAN SETTINGS ── -->
+                    <Border Grid.Row="1"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Margin="12,14,12,12" VerticalAlignment="Top">
+                            <TextBlock Text="SCAN SETTINGS"
+                                       FontSize="10"
                                        FontWeight="SemiBold"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                        <Slider x:Name="ReportDepthSlider"
-                                Minimum="0" Maximum="10" Value="2"
-                                TickFrequency="1"
-                                IsSnapToTickEnabled="True"
-                                Margin="0,0,0,4"
-                                ValueChanged="ReportDepthSlider_ValueChanged"
-                                ToolTip="Number of subfolder levels shown in the PDF report (0 = show all levels)"/>
-                        <TextBlock Text="0 = show all levels"
-                                   FontSize="10"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   Margin="0,0,0,12"/>
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,0,0,10"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Max Threads"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Top" FontSize="12"/>
+                                <TextBlock x:Name="ThreadCountLabel" Grid.Column="1" Text="8"
+                                           Foreground="{StaticResource AccentBlueBrush}"
+                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Top"/>
+                            </Grid>
+                            <Slider x:Name="ThreadsSlider"
+                                    Minimum="1" Maximum="32" Value="8"
+                                    TickFrequency="1" IsSnapToTickEnabled="True"
+                                    Margin="0,0,0,12"
+                                    ValueChanged="ThreadsSlider_ValueChanged"
+                                    ToolTip="Number of parallel scan threads (1-32)"/>
+                            <CheckBox x:Name="SkipHiddenCheckBox"
+                                      Content="Skip Hidden Folders" IsChecked="True"
+                                      Margin="0,0,0,8"
+                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                      ToolTip="Skip folders with the Hidden attribute"/>
+                            <CheckBox x:Name="SkipSystemCheckBox"
+                                      Content="Skip System Folders" IsChecked="True"
+                                      Margin="0,0,0,0"
+                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                      ToolTip="Skip folders with the System attribute"/>
+                        </StackPanel>
+                    </Border>
 
-                        <!-- Preview before export -->
-                        <CheckBox x:Name="PreviewBeforeExportCheckBox"
-                                  Content="Preview before export"
-                                  FontSize="12"
-                                  Foreground="{StaticResource TextSecondaryBrush}"
-                                  Margin="0,0,0,4"
-                                  ToolTip="Open an interactive preview to select and rename folders before generating the PDF"/>
+                    <!-- ── EXPORT SETTINGS ── -->
+                    <Border Grid.Row="2"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Margin="12,14,12,12" VerticalAlignment="Top">
+                            <TextBlock Text="EXPORT SETTINGS"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,0,0,10"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Report Depth"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Top" FontSize="12"/>
+                                <TextBlock x:Name="ReportDepthLabel" Grid.Column="1" Text="2"
+                                           Foreground="{StaticResource AccentBlueBrush}"
+                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Top"/>
+                            </Grid>
+                            <Slider x:Name="ReportDepthSlider"
+                                    Minimum="0" Maximum="10" Value="2"
+                                    TickFrequency="1" IsSnapToTickEnabled="True"
+                                    Margin="0,0,0,4"
+                                    ValueChanged="ReportDepthSlider_ValueChanged"
+                                    ToolTip="Number of subfolder levels shown in the PDF report (0 = show all levels)"/>
+                            <TextBlock Text="0 = show all levels"
+                                       FontSize="10"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,0,0,12"/>
+                            <CheckBox x:Name="PreviewBeforeExportCheckBox"
+                                      Content="Preview before export" FontSize="12"
+                                      Foreground="{StaticResource TextSecondaryBrush}"
+                                      Margin="0,0,0,0"
+                                      ToolTip="Open an interactive preview to select and rename folders before generating the PDF"/>
+                        </StackPanel>
+                    </Border>
 
-                    </StackPanel>
-                </ScrollViewer>
+                </Grid>
             </Border>
 
             <!-- Splitter -->
@@ -304,7 +327,7 @@
                 <Grid>
 
                     <!-- Scan controls: centered in the FULL panel height, never move -->
-                    <StackPanel VerticalAlignment="Center"
+                    <StackPanel VerticalAlignment="Top"
                                 HorizontalAlignment="Center"
                                 Margin="20">
 
@@ -418,7 +441,56 @@
                     Background="{StaticResource BackgroundMediumBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1,0,0,0">
-                <TabControl x:Name="RightTabControl">
+                <TabControl x:Name="RightTabControl"
+                            Loaded="RightTabControl_Loaded">
+                    <TabControl.Template>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <!-- Single-row tab strip with scroll arrows -->
+                                <Border Grid.Row="0"
+                                        Background="{StaticResource BackgroundLightBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Left arrow — far left, hidden when at start -->
+                                        <Button x:Name="TabScrollLeftBtn"
+                                                Grid.Column="0"
+                                                Content="‹"
+                                                Style="{StaticResource TabNavButton}"
+                                                Click="TabScrollLeft_Click"
+                                                Visibility="Collapsed"/>
+                                        <!-- Scrollable tab strip — takes all remaining space -->
+                                        <ScrollViewer x:Name="TabHeaderScroll"
+                                                      Grid.Column="1"
+                                                      HorizontalScrollBarVisibility="Hidden"
+                                                      VerticalScrollBarVisibility="Disabled"
+                                                      Focusable="False">
+                                            <TabPanel IsItemsHost="True" Background="Transparent"/>
+                                        </ScrollViewer>
+                                        <!-- Right arrow — far right, hidden when at end -->
+                                        <Button x:Name="TabScrollRightBtn"
+                                                Grid.Column="2"
+                                                Content="›"
+                                                Style="{StaticResource TabNavButton}"
+                                                Click="TabScrollRight_Click"
+                                                Visibility="Collapsed"/>
+                                    </Grid>
+                                </Border>
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  Grid.Row="1"
+                                                  ContentSource="SelectedContent"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </TabControl.Template>
 
                     <!-- ── Fixed "Folder Structure" tab (no close button) ── -->
                     <TabItem>
@@ -435,7 +507,7 @@
                                        Foreground="{StaticResource TextMutedBrush}"
                                        FontSize="13"
                                        HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
+                                       VerticalAlignment="Top"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap"
                                        MaxWidth="240"
@@ -456,6 +528,47 @@
             </Border>
         </Grid>
 
+        <!-- ═══════════════════ DRAG & DROP OVERLAY ═══════════════════ -->
+        <Grid x:Name="DragOverlay"
+              Grid.RowSpan="3"
+              Visibility="Collapsed"
+              IsHitTestVisible="False">
+            <!-- dark semi-transparent backdrop -->
+            <Border Background="#CC141418"/>
+            <!-- accent frame + glow -->
+            <Border BorderBrush="#FF4C7FDB"
+                    BorderThickness="3"
+                    CornerRadius="8"
+                    Margin="24">
+                <Border.Effect>
+                    <DropShadowEffect Color="#FF4C7FDB" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                </Border.Effect>
+            </Border>
+            <!-- centered message -->
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Top">
+                <Path Data="M20,6 L16,6 L16,0 L8,0 L8,6 L4,6 L12,14 Z M4,16 L4,18 L20,18 L20,16 Z"
+                      Fill="#FF4C7FDB"
+                      Width="52" Height="52"
+                      Stretch="Uniform"
+                      HorizontalAlignment="Center"
+                      Margin="0,0,0,20"
+                      Opacity="0.95"/>
+                <TextBlock Text="Drop your folders here"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="#FFFFFFFF"
+                           HorizontalAlignment="Center"
+                           FontFamily="Segoe UI"/>
+                <TextBlock Text="They will be added to your scan list"
+                           FontSize="13"
+                           Foreground="#FF8A8A8A"
+                           HorizontalAlignment="Center"
+                           Margin="0,8,0,0"
+                           FontFamily="Segoe UI"/>
+            </StackPanel>
+        </Grid>
+
         <!-- ═══════════════════════ STATUS BAR ═══════════════════════ -->
         <Border Grid.Row="2"
                 Background="{StaticResource BackgroundMediumBrush}"
@@ -466,7 +579,7 @@
                            Text="Ready"
                            Foreground="{StaticResource TextMutedBrush}"
                            FontSize="11"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Top"/>
             </Grid>
         </Border>
     </Grid>
