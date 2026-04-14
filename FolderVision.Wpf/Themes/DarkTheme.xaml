@@ -505,12 +505,12 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="CheckBorder" Property="Background" Value="{StaticResource AccentBlueBrush}"/>
-                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{StaticResource AccentBlueBrush}"/>
+                            <Setter TargetName="CheckBorder" Property="Background" Value="#FF4A4A4D"/>
+                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#FF6A6A6D"/>
                             <Setter TargetName="Checkmark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{StaticResource AccentBlueBrush}"/>
+                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#FF7A7A7D"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="CheckBorder" Property="Opacity" Value="0.4"/>
