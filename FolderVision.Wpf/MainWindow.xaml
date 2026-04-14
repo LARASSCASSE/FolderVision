@@ -413,50 +413,46 @@
                           Background="{StaticResource BorderBrush}"
                           Cursor="SizeWE"/>
 
-            <!-- ──────────── RIGHT PANEL (Tree) ──────────── -->
+            <!-- ──────────── RIGHT PANEL (TabControl) ──────────── -->
             <Border Grid.Column="4"
                     Background="{StaticResource BackgroundMediumBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1,0,0,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                <TabControl x:Name="RightTabControl">
 
-                    <!-- Tree panel header -->
-                    <Border Grid.Row="0"
-                            Background="{StaticResource BackgroundLightBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="0,0,0,1"
-                            Padding="12,8">
-                        <TextBlock Text="Folder Structure"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                    </Border>
+                    <!-- ── Fixed "Folder Structure" tab (no close button) ── -->
+                    <TabItem>
+                        <TabItem.Header>
+                            <TextBlock Text="Folder Structure"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </TabItem.Header>
 
-                    <!-- Placeholder when no scan -->
-                    <TextBlock x:Name="TreePlaceholder"
-                               Grid.Row="1"
-                               Text="Run a scan to view the folder structure here."
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontSize="13"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               TextAlignment="Center"
-                               TextWrapping="Wrap"
-                               MaxWidth="240"
-                               Margin="16"/>
+                        <Grid>
+                            <!-- Placeholder when no scan -->
+                            <TextBlock x:Name="TreePlaceholder"
+                                       Text="Run a scan to view the folder structure here."
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="240"
+                                       Margin="16"/>
 
-                    <!-- Actual TreeView -->
-                    <TreeView x:Name="FolderTreeView"
-                              Grid.Row="1"
-                              Margin="4"
-                              Visibility="Collapsed"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"/>
-                </Grid>
+                            <!-- Actual TreeView -->
+                            <TreeView x:Name="FolderTreeView"
+                                      Margin="4"
+                                      Visibility="Collapsed"
+                                      BorderThickness="0"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling"/>
+                        </Grid>
+                    </TabItem>
+
+                    <!-- Preview tabs are added dynamically in code-behind -->
+                </TabControl>
             </Border>
         </Grid>
 

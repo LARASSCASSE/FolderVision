@@ -18,6 +18,8 @@ namespace FolderVision.Wpf
         private ScanEngine? _scanEngine;
         private ScanResult? _lastScanResult;
         private bool _isScanning;
+        // Preview tabs: index 0 in RightTabControl = "Folder Structure" (fixed), 1..N = preview tabs
+        private readonly List<TabItem> _previewTabs = new();
 
         // Track current handler to avoid stale subscriptions
         private EventHandler<ProgressEventArgs>? _progressHandler;
@@ -247,6 +249,7 @@ namespace FolderVision.Wpf
             StatsBlock.Visibility = Visibility.Visible;
 
             PopulateTree(result);
+            RefreshPreviewTabs(result);
 
             ExportHtmlButton.IsEnabled = true;
             ExportPdfButton.IsEnabled = true;
@@ -271,6 +274,75 @@ namespace FolderVision.Wpf
                 foreach (TreeViewItem item in FolderTreeView.Items)
                     item.IsExpanded = true;
             }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  PREVIEW TABS
+        // ─────────────────────────────────────────────────────────────────────
+
+        private void RefreshPreviewTabs(ScanResult result)
+        {
+            // Remove old preview tabs
+            foreach (var tab in _previewTabs)
+                RightTabControl.Items.Remove(tab);
+            _previewTabs.Clear();
+
+            if (PreviewBeforeExportCheckBox.IsChecked != true) return;
+
+            var maxDepth = (int)ReportDepthSlider.Value;
+            int idx = 1;
+            foreach (var root in result.RootFolders)
+            {
+                var content = new PreviewTabContent();
+                content.Initialize(root, maxDepth);
+
+                var tab = new TabItem { Content = content };
+                tab.Header = BuildPreviewTabHeader($"scan {idx++}", tab);
+
+                _previewTabs.Add(tab);
+                RightTabControl.Items.Add(tab);
+            }
+        }
+
+        private System.Windows.FrameworkElement BuildPreviewTabHeader(string title, TabItem tab)
+        {
+            var panel = new System.Windows.Controls.StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal
+            };
+
+            // Small indicator square
+            panel.Children.Add(new System.Windows.Shapes.Rectangle
+            {
+                Width = 10, Height = 10,
+                Fill = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x4C, 0x7F, 0xDB)),
+                RadiusX = 2, RadiusY = 2,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new System.Windows.Thickness(0, 0, 6, 0)
+            });
+
+            panel.Children.Add(new System.Windows.Controls.TextBlock
+            {
+                Text = title,
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            var closeBtn = new System.Windows.Controls.Button
+            {
+                Content = "×",
+                Style = (System.Windows.Style)FindResource("TabCloseButton"),
+                ToolTip = "Close preview"
+            };
+            closeBtn.Click += (_, _) =>
+            {
+                _previewTabs.Remove(tab);
+                RightTabControl.Items.Remove(tab);
+            };
+            panel.Children.Add(closeBtn);
+
+            return panel;
         }
 
         private TreeViewItem BuildTreeItem(FolderInfo folder, bool isRoot = false)
@@ -345,12 +417,11 @@ namespace FolderVision.Wpf
             var reportDepth = (int)ReportDepthSlider.Value;
             var pdfOptions = new PdfExportOptions { MaxTreeDepth = reportDepth };
 
-            // If "Preview before export" is checked, open the interactive preview window
-            if (PreviewBeforeExportCheckBox.IsChecked == true)
+            // If preview tabs are open, export from their checked/renamed nodes
+            if (_previewTabs.Count > 0)
             {
-                var preview = new ExportPreviewWindow(_lastScanResult, pdfOptions) { Owner = this };
-                preview.ShowDialog();
-                return; // ExportPreviewWindow handles SaveFileDialogs and PDF generation
+                await ExportFromPreviewTabsAsync(pdfOptions);
+                return;
             }
 
             // Single root → one SaveFileDialog, one PDF (existing behaviour)
@@ -417,6 +488,60 @@ namespace FolderVision.Wpf
                     SetStatus($"{exported.Count} PDF(s) exported.");
                     System.Windows.MessageBox.Show(
                         $"{exported.Count} PDF report(s) saved:\n" + string.Join("\n", exported),
+                        "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Export failed:\n{ex.Message}",
+                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                SetStatus("PDF export failed.");
+            }
+            finally { ExportPdfButton.IsEnabled = _lastScanResult != null; }
+        }
+
+        private async Task ExportFromPreviewTabsAsync(PdfExportOptions pdfOptions)
+        {
+            var exported = new List<string>();
+            try
+            {
+                ExportPdfButton.IsEnabled = false;
+                int total = _previewTabs.Count;
+                for (int i = 0; i < total; i++)
+                {
+                    if (_previewTabs[i].Content is not PreviewTabContent previewContent) continue;
+
+                    var filteredRoot = previewContent.BuildFilteredRoot();
+                    if (filteredRoot == null) continue;
+
+                    var singleResult = new ScanResult();
+                    singleResult.AddRootFolder(filteredRoot);
+                    if (_lastScanResult != null)
+                        foreach (var p in _lastScanResult.ScannedPaths)
+                            singleResult.AddScannedPath(p);
+                    singleResult.UpdateTotals();
+
+                    var dialog = new Microsoft.Win32.SaveFileDialog
+                    {
+                        Title = total > 1 ? $"Save PDF — scan {i + 1} of {total}" : "Save PDF Report",
+                        Filter = "PDF Files (*.pdf)|*.pdf",
+                        FileName = BuildPdfFileNameFromPath(filteredRoot.FullPath),
+                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                    };
+                    if (dialog.ShowDialog() != true) continue;
+
+                    SetStatus($"Exporting PDF {i + 1}/{total}…");
+                    await new PdfExporter(pdfOptions).ExportAsync(singleResult, dialog.FileName);
+                    exported.Add(dialog.FileName);
+                }
+
+                if (exported.Count > 0)
+                {
+                    SetStatus($"{exported.Count} PDF(s) exported.");
+                    System.Windows.MessageBox.Show(
+                        exported.Count == 1
+                            ? $"PDF report saved to:\n{exported[0]}"
+                            : $"{exported.Count} PDF report(s) saved:\n" + string.Join("\n", exported),
                         "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
