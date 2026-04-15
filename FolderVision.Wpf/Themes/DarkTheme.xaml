@@ -443,35 +443,49 @@
         </Setter>
     </Style>
 
-    <!-- TabItem Style -->
+    <!-- TabItem Style — bottom-line moderne -->
     <Style TargetType="TabItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
-        <Setter Property="Padding" Value="14,8"/>
+        <Setter Property="Padding" Value="16,10"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <Border x:Name="TabBorder"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="0,0,1,0"
-                            Padding="{TemplateBinding Padding}">
-                        <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid>
+                        <!-- Fond de l'onglet -->
+                        <Border x:Name="TabBg"
+                                Background="Transparent"
+                                CornerRadius="0"/>
+                        <!-- Contenu + padding -->
+                        <Border x:Name="TabBorder"
+                                Background="Transparent"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                        </Border>
+                        <!-- Indicateur bas — caché par défaut -->
+                        <Border x:Name="BottomLine"
+                                Height="2"
+                                VerticalAlignment="Bottom"
+                                Background="#FF505055"
+                                CornerRadius="1"
+                                Margin="10,0"
+                                Visibility="Collapsed"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- Onglet actif -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource BackgroundMediumBrush}"/>
-                            <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource AccentBlueBrush}"/>
-                            <Setter TargetName="TabBorder" Property="BorderThickness" Value="0,2,1,0"/>
+                            <Setter TargetName="TabBg" Property="Background" Value="#FF2A2A2D"/>
+                            <Setter TargetName="BottomLine" Property="Visibility" Value="Visible"/>
                             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                         </Trigger>
+                        <!-- Hover sur onglet non actif -->
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsSelected" Value="False"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource BackgroundPanelBrush}"/>
+                            <Setter TargetName="TabBg" Property="Background" Value="#FF232326"/>
                             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>

@@ -40,23 +40,23 @@
             <Grid>
                 <!-- App title — left side (draggable area via WindowChrome CaptionHeight) -->
                 <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Top"
+                            VerticalAlignment="Center"
                             Margin="16,0,120,0">
                     <Image Source="Ressources/foldervision_icon-removebg.png"
                            Height="38"
                            Width="38"
                            RenderOptions.BitmapScalingMode="HighQuality"
-                           VerticalAlignment="Top"
+                           VerticalAlignment="Center"
                            Margin="0,0,8,0"/>
                     <TextBlock Text="FolderVision"
                                FontSize="18"
                                FontWeight="Bold"
                                Foreground="{StaticResource TextPrimaryBrush}"
-                               VerticalAlignment="Top"/>
+                               VerticalAlignment="Center"/>
                     <TextBlock Text="  |  Multi-threaded folder scanner"
                                FontSize="13"
                                Foreground="{StaticResource TextMutedBrush}"
-                               VerticalAlignment="Top"/>
+                               VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Window control buttons — right side -->
@@ -164,40 +164,34 @@
                                 <DataTemplate>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding}"
-                                                   FontSize="12"
-                                                   VerticalAlignment="Top"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   ToolTip="{Binding}"/>
-                                        <Button Grid.Column="1"
+                                        <Button Grid.Column="0"
                                                 Content="×"
-                                                FontSize="13"
+                                                Width="20"
+                                                FontSize="12"
                                                 Click="RemovePathItem_Click"
-                                                Background="Transparent"
                                                 BorderThickness="0"
-                                                Padding="6,0,2,0"
+                                                Padding="0"
                                                 Cursor="Hand"
                                                 Focusable="False"
-                                                VerticalAlignment="Top">
+                                                VerticalAlignment="Center">
                                             <Button.Style>
                                                 <Style TargetType="Button">
-                                                    <Setter Property="Foreground" Value="#FF606060"/>
-                                                    <Setter Property="Visibility" Value="Hidden"/>
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Setter Property="Foreground" Value="#FF909090"/>
                                                     <Setter Property="Background" Value="Transparent"/>
                                                     <Setter Property="BorderThickness" Value="0"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="Button">
                                                                 <Border Background="{TemplateBinding Background}">
-                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                 </Border>
                                                                 <ControlTemplate.Triggers>
                                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter Property="Foreground" Value="#FFDDDDDD"/>
+                                                                        <Setter Property="Foreground" Value="#FFEEEEEE"/>
                                                                     </Trigger>
                                                                 </ControlTemplate.Triggers>
                                                             </ControlTemplate>
@@ -211,6 +205,11 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding}"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"/>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -244,10 +243,10 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="Max Threads"
                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                           VerticalAlignment="Top" FontSize="12"/>
+                                           VerticalAlignment="Center" FontSize="12"/>
                                 <TextBlock x:Name="ThreadCountLabel" Grid.Column="1" Text="8"
                                            Foreground="{StaticResource AccentBlueBrush}"
-                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Top"/>
+                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
                             </Grid>
                             <Slider x:Name="ThreadsSlider"
                                     Minimum="1" Maximum="32" Value="8"
@@ -285,10 +284,10 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="Report Depth"
                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                           VerticalAlignment="Top" FontSize="12"/>
+                                           VerticalAlignment="Center" FontSize="12"/>
                                 <TextBlock x:Name="ReportDepthLabel" Grid.Column="1" Text="2"
                                            Foreground="{StaticResource AccentBlueBrush}"
-                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Top"/>
+                                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
                             </Grid>
                             <Slider x:Name="ReportDepthSlider"
                                     Minimum="0" Maximum="10" Value="2"
@@ -321,52 +320,11 @@
             <!-- ──────────── CENTER PANEL ──────────── -->
             <Border Grid.Column="2"
                     Background="{StaticResource BackgroundDarkBrush}">
-                <!-- Single-layer Grid: all children share the full height.
-                     Scan controls are always centered in the total panel height.
-                     StatsBlock and Export buttons are pinned to the bottom. -->
-                <Grid>
+                <!-- DockPanel: stats+export anchored to bottom, scan controls centered in remaining space. -->
+                <DockPanel LastChildFill="True">
 
-                    <!-- Scan controls: centered in the FULL panel height, never move -->
-                    <StackPanel VerticalAlignment="Top"
-                                HorizontalAlignment="Center"
-                                Margin="20">
-
-                        <Button x:Name="StartScanButton"
-                                Content="▶  Start Scan"
-                                Style="{StaticResource BigScanButton}"
-                                Click="StartScanButton_Click"
-                                Margin="0,0,0,16"
-                                IsEnabled="False"
-                                ToolTip="Start scanning the added paths"/>
-
-                        <Button x:Name="CancelScanButton"
-                                Content="■  Cancel"
-                                Style="{StaticResource DefaultButton}"
-                                Click="CancelScanButton_Click"
-                                Height="34"
-                                IsEnabled="False"
-                                Margin="0,0,0,24"
-                                ToolTip="Cancel the running scan"/>
-
-                        <ProgressBar x:Name="ScanProgressBar"
-                                     Value="0"
-                                     Maximum="100"
-                                     Height="10"
-                                     Width="260"
-                                     Margin="0,0,0,8"/>
-
-                        <TextBlock x:Name="ProgressLabel"
-                                   Text="No scan running"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="11"
-                                   TextAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   MaxWidth="260"/>
-                    </StackPanel>
-
-                    <!-- Bottom zone: StatsBlock above Export buttons, both pinned to bottom -->
-                    <StackPanel VerticalAlignment="Bottom"
+                    <!-- Bottom zone: Stats block + Export buttons, anchored to bottom -->
+                    <StackPanel DockPanel.Dock="Bottom"
                                 HorizontalAlignment="Stretch"
                                 Margin="20,0,20,16">
 
@@ -426,7 +384,48 @@
                         </StackPanel>
                     </StackPanel>
 
-                </Grid>
+                    <!-- Scan controls: fills the remaining space and centers its content -->
+                    <Grid>
+                        <StackPanel VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Margin="20">
+
+                            <Button x:Name="StartScanButton"
+                                    Content="▶  Start Scan"
+                                    Style="{StaticResource BigScanButton}"
+                                    Click="StartScanButton_Click"
+                                    Margin="0,0,0,16"
+                                    IsEnabled="False"
+                                    ToolTip="Start scanning the added paths"/>
+
+                            <Button x:Name="CancelScanButton"
+                                    Content="■  Cancel"
+                                    Style="{StaticResource DefaultButton}"
+                                    Click="CancelScanButton_Click"
+                                    Height="34"
+                                    IsEnabled="False"
+                                    Margin="0,0,0,24"
+                                    ToolTip="Cancel the running scan"/>
+
+                            <ProgressBar x:Name="ScanProgressBar"
+                                         Value="0"
+                                         Maximum="100"
+                                         Height="10"
+                                         Width="260"
+                                         Margin="0,0,0,8"/>
+
+                            <TextBlock x:Name="ProgressLabel"
+                                       Text="No scan running"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="11"
+                                       TextAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="260"/>
+                        </StackPanel>
+                    </Grid>
+
+                </DockPanel>
             </Border>
 
             <!-- Splitter -->
@@ -507,7 +506,7 @@
                                        Foreground="{StaticResource TextMutedBrush}"
                                        FontSize="13"
                                        HorizontalAlignment="Center"
-                                       VerticalAlignment="Top"
+                                       VerticalAlignment="Center"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap"
                                        MaxWidth="240"
@@ -546,7 +545,7 @@
             </Border>
             <!-- centered message -->
             <StackPanel HorizontalAlignment="Center"
-                        VerticalAlignment="Top">
+                        VerticalAlignment="Center">
                 <Path Data="M20,6 L16,6 L16,0 L8,0 L8,6 L4,6 L12,14 Z M4,16 L4,18 L20,18 L20,16 Z"
                       Fill="#FF4C7FDB"
                       Width="52" Height="52"
@@ -579,7 +578,7 @@
                            Text="Ready"
                            Foreground="{StaticResource TextMutedBrush}"
                            FontSize="11"
-                           VerticalAlignment="Top"/>
+                           VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

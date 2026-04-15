@@ -445,17 +445,6 @@ namespace FolderVision.Wpf
                 Orientation = System.Windows.Controls.Orientation.Horizontal
             };
 
-            // Small indicator square
-            panel.Children.Add(new System.Windows.Shapes.Rectangle
-            {
-                Width = 10, Height = 10,
-                Fill = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0x4C, 0x7F, 0xDB)),
-                RadiusX = 2, RadiusY = 2,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new System.Windows.Thickness(0, 0, 6, 0)
-            });
-
             panel.Children.Add(new System.Windows.Controls.TextBlock
             {
                 Text = title,
