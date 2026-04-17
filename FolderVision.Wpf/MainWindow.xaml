@@ -72,14 +72,14 @@
                             Style="{StaticResource TitleBarButton}"
                             Click="MinimizeButton_Click"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            ToolTip="Minimize"/>
+/>
                     <!-- Maximize/Restore — rounded square drawn in XAML -->
                     <Button x:Name="MaximizeButton"
                             Width="46" Height="52"
                             Style="{StaticResource TitleBarButton}"
                             Click="MaximizeButton_Click"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            ToolTip="Maximize">
+>
                         <Rectangle Width="10" Height="10"
                                    RadiusX="1" RadiusY="1"
                                    Fill="Transparent"
@@ -94,7 +94,7 @@
                             Style="{StaticResource TitleBarCloseButton}"
                             Click="CloseButton_Click"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            ToolTip="Close"/>
+/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -215,15 +215,34 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <!-- Add path button — below the list -->
-                        <Button x:Name="AddPathButton"
-                                Grid.Row="2"
-                                Content="+ Add Path"
-                                Height="32"
-                                Style="{StaticResource DefaultButton}"
-                                Click="AddPathButton_Click"
-                                Margin="0,0,0,12"
-                                ToolTip="Browse and select one or more folders to scan"/>
+                        <!-- Add path + Clear all buttons -->
+                        <Grid Grid.Row="2" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="AddPathButton"
+                                    Grid.Column="0"
+                                    Content="+ Add Path"
+                                    Height="32"
+                                    Style="{StaticResource DefaultButton}"
+                                    Click="AddPathButton_Click"/>
+                            <Button x:Name="ClearAllPathsButton"
+                                    Grid.Column="2"
+                                    Height="32"
+                                    Width="36"
+                                    Style="{StaticResource DefaultButton}"
+                                    Click="ClearAllPathsButton_Click">
+                                <!-- Trash can icon drawn as Path -->
+                                <Path Data="M4,0 H8 V2 H12 V4 H0 V2 H4 Z M1,5 L2,14 H10 L11,5 Z"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Width="12" Height="14"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
                     </Grid>
 
                     <!-- ── SCAN SETTINGS ── -->
@@ -253,17 +272,17 @@
                                     TickFrequency="1" IsSnapToTickEnabled="True"
                                     Margin="0,0,0,12"
                                     ValueChanged="ThreadsSlider_ValueChanged"
-                                    ToolTip="Number of parallel scan threads (1-32)"/>
+/>
                             <CheckBox x:Name="SkipHiddenCheckBox"
                                       Content="Skip Hidden Folders" IsChecked="True"
                                       Margin="0,0,0,8"
                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                                      ToolTip="Skip folders with the Hidden attribute"/>
+/>
                             <CheckBox x:Name="SkipSystemCheckBox"
                                       Content="Skip System Folders" IsChecked="True"
                                       Margin="0,0,0,0"
                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                                      ToolTip="Skip folders with the System attribute"/>
+/>
                         </StackPanel>
                     </Border>
 
@@ -294,7 +313,7 @@
                                     TickFrequency="1" IsSnapToTickEnabled="True"
                                     Margin="0,0,0,4"
                                     ValueChanged="ReportDepthSlider_ValueChanged"
-                                    ToolTip="Number of subfolder levels shown in the PDF report (0 = show all levels)"/>
+/>
                             <TextBlock Text="0 = show all levels"
                                        FontSize="10"
                                        Foreground="{StaticResource TextMutedBrush}"
@@ -303,7 +322,7 @@
                                       Content="Preview before export" FontSize="12"
                                       Foreground="{StaticResource TextSecondaryBrush}"
                                       Margin="0,0,0,0"
-                                      ToolTip="Open an interactive preview to select and rename folders before generating the PDF"/>
+/>
                         </StackPanel>
                     </Border>
 
@@ -363,25 +382,15 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Export buttons -->
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center">
-                            <Button x:Name="ExportHtmlButton"
-                                    Content="📄 Export HTML"
-                                    Style="{StaticResource DefaultButton}"
-                                    Click="ExportHtmlButton_Click"
-                                    IsEnabled="False"
-                                    Margin="0,0,8,0"
-                                    Height="34"
-                                    ToolTip="Export scan results as an HTML report"/>
-                            <Button x:Name="ExportPdfButton"
-                                    Content="📑 Export PDF"
-                                    Style="{StaticResource DefaultButton}"
-                                    Click="ExportPdfButton_Click"
-                                    IsEnabled="False"
-                                    Height="34"
-                                    ToolTip="Export scan results as a PDF report"/>
-                        </StackPanel>
+                        <!-- Export button -->
+                        <Button x:Name="ExportPdfButton"
+                                Content="📑 Export PDF"
+                                Style="{StaticResource DefaultButton}"
+                                Click="ExportPdfButton_Click"
+                                IsEnabled="False"
+                                Height="34"
+                                Width="240"
+                                HorizontalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Scan controls: fills the remaining space and centers its content -->
@@ -396,7 +405,7 @@
                                     Click="StartScanButton_Click"
                                     Margin="0,0,0,16"
                                     IsEnabled="False"
-                                    ToolTip="Start scanning the added paths"/>
+/>
 
                             <Button x:Name="CancelScanButton"
                                     Content="■  Cancel"
@@ -405,7 +414,7 @@
                                     Height="34"
                                     IsEnabled="False"
                                     Margin="0,0,0,24"
-                                    ToolTip="Cancel the running scan"/>
+/>
 
                             <ProgressBar x:Name="ScanProgressBar"
                                          Value="0"

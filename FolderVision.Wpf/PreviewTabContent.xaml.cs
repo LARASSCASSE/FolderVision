@@ -79,6 +79,22 @@ namespace FolderVision.Wpf
             return folder;
         }
 
+        // ── Bulk-uncheck children ──────────────────────────────────────────────
+
+        private void UncheckChildren_Click(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is PreviewNode node)
+            {
+                // "Décocher" = remove the × = set IsIncluded back to true
+                // Also uncheck the parent itself
+                if (!node.IsIncluded) node.IsIncluded = true;
+                // Then uncheck all children that are currently checked (IsIncluded=false)
+                foreach (var child in node.Children)
+                    if (!child.IsIncluded) child.IsIncluded = true;
+            }
+        }
+
         // ── Inline editing ─────────────────────────────────────────────────────
 
         private void NodeLabel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

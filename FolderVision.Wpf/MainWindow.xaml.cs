@@ -138,6 +138,13 @@ namespace FolderVision.Wpf
             e.Handled = true;
         }
 
+        private void ClearAllPathsButton_Click(object sender, RoutedEventArgs e)
+        {
+            PathsListBox.Items.Clear();
+            UpdateStartButtonState();
+            SetStatus("All paths cleared.");
+        }
+
         private void RemovePathItem_Click(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.Button btn && btn.DataContext is string path)
@@ -184,10 +191,20 @@ namespace FolderVision.Wpf
             {
                 // Positive delta = scroll right, negative = scroll left
                 var delta = (short)(wParam.ToInt64() >> 16);
-                var sv = FindScrollViewer(PathsListBox);
-                if (sv != null && IsElementUnderMouse(PathsListBox))
+
+                // Paths list box horizontal scroll
+                var pathsSv = FindScrollViewer(PathsListBox);
+                if (pathsSv != null && IsElementUnderMouse(PathsListBox))
                 {
-                    sv.ScrollToHorizontalOffset(sv.HorizontalOffset + delta / 3.0);
+                    pathsSv.ScrollToHorizontalOffset(pathsSv.HorizontalOffset + delta / 3.0);
+                    handled = true;
+                }
+
+                // Tab strip horizontal scroll
+                if (!handled && _tabHeaderScroll != null && IsElementUnderMouse(RightTabControl))
+                {
+                    _tabHeaderScroll.ScrollToHorizontalOffset(_tabHeaderScroll.HorizontalOffset + delta / 3.0);
+                    UpdateTabNavButtons();
                     handled = true;
                 }
             }
@@ -255,7 +272,6 @@ namespace FolderVision.Wpf
             FolderTreeView.Items.Clear();
             FolderTreeView.Visibility = Visibility.Collapsed;
             TreePlaceholder.Visibility = Visibility.Visible;
-            ExportHtmlButton.IsEnabled = false;
             ExportPdfButton.IsEnabled = false;
 
             var settings = BuildScanSettings();
@@ -349,7 +365,6 @@ namespace FolderVision.Wpf
             PopulateTree(result);
             RefreshPreviewTabs(result);
 
-            ExportHtmlButton.IsEnabled = true;
             ExportPdfButton.IsEnabled = true;
         }
 
@@ -495,43 +510,6 @@ namespace FolderVision.Wpf
         //  EXPORT
         // ─────────────────────────────────────────────────────────────────────
 
-        private async void ExportHtmlButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_lastScanResult == null) return;
-
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Title = "Save HTML Report",
-                Filter = "HTML Files (*.html)|*.html",
-                FileName = "FolderScan_Report.html",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-            };
-
-            if (dialog.ShowDialog() != true) return;
-
-            try
-            {
-                ExportHtmlButton.IsEnabled = false;
-                SetStatus("Exporting HTML...");
-                var exporter = new HtmlExporter();
-                await exporter.ExportAsync(_lastScanResult, dialog.FileName);
-                SetStatus($"HTML exported: {dialog.FileName}");
-                System.Windows.MessageBox.Show(
-                    $"HTML report saved to:\n{dialog.FileName}",
-                    "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show(
-                    $"Export failed:\n{ex.Message}",
-                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                SetStatus("HTML export failed.");
-            }
-            finally
-            {
-                ExportHtmlButton.IsEnabled = _lastScanResult != null;
-            }
-        }
 
         private async void ExportPdfButton_Click(object sender, RoutedEventArgs e)
         {

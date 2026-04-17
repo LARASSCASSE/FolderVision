@@ -54,12 +54,62 @@
                               Margin="0,0,6,0"/>
                     <TextBlock Text="{Binding DisplayName}"
                                Style="{StaticResource PreviewNodeLabel}"
-                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"
-                               ToolTip="{Binding Source.FullPath}"/>
+                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"/>
                     <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource PreviewNodeEditor}"
                              LostFocus="NodeEditor_LostFocus"
                              KeyDown="NodeEditor_KeyDown"/>
+
+                    <!-- Bulk-uncheck button: only when >5 children, only on hover -->
+                    <Button Content="✕ tout décocher"
+                            Margin="8,0,0,0"
+                            Padding="7,2"
+                            FontSize="10"
+                            Cursor="Hand"
+                            Focusable="False"
+                            Click="UncheckChildren_Click">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Background" Value="#FF3A3A3D"/>
+                                <Setter Property="Foreground" Value="#FFB0B0B0"/>
+                                <Setter Property="BorderBrush" Value="#FF555558"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="3"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#FF4A4A4E"/>
+                                                    <Setter Property="Foreground" Value="#FFEEEEEE"/>
+                                                    <Setter Property="BorderBrush" Value="#FF777779"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#FF2A2A2D"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True"/>
+                                            <Condition Binding="{Binding ShowUncheckButton}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
             </HierarchicalDataTemplate>
         </ResourceDictionary>
