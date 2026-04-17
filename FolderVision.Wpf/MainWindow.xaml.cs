@@ -585,9 +585,6 @@ namespace FolderVision.Wpf
                     await new PdfExporter(pdfOptions).ExportAsync(_lastScanResult, dialog.FileName);
                     SetStatus($"PDF exported: {dialog.FileName}");
                     OpenPdfIfRequested(dialog.FileName);
-                    System.Windows.MessageBox.Show(
-                        $"PDF report saved to:\n{dialog.FileName}",
-                        "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
@@ -630,9 +627,6 @@ namespace FolderVision.Wpf
                 if (exported.Count > 0)
                 {
                     SetStatus($"{exported.Count} PDF(s) exported.");
-                    System.Windows.MessageBox.Show(
-                        $"{exported.Count} PDF report(s) saved:\n" + string.Join("\n", exported),
-                        "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -691,11 +685,6 @@ namespace FolderVision.Wpf
                 if (exported.Count > 0)
                 {
                     SetStatus($"{exported.Count} PDF(s) exported.");
-                    System.Windows.MessageBox.Show(
-                        exported.Count == 1
-                            ? $"PDF report saved to:\n{exported[0]}"
-                            : $"{exported.Count} PDF report(s) saved:\n" + string.Join("\n", exported),
-                        "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
