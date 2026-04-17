@@ -328,7 +328,9 @@ namespace FolderVision.Wpf
 
                 if (paths.Count == 1)
                 {
-                    aggregatedResult = await _scanEngine.ScanFolderAsync(paths[0], settings);
+                    // Task.Run ensures the scan starts on a thread-pool thread immediately,
+                    // preventing any synchronous setup inside ScanFolderAsync from freezing the UI
+                    aggregatedResult = await Task.Run(async () => await _scanEngine.ScanFolderAsync(paths[0], settings));
                     aggregatedResult?.UpdateTotals();
                 }
                 else
@@ -336,7 +338,7 @@ namespace FolderVision.Wpf
                     aggregatedResult = new ScanResult { ScanStartTime = scanStart };
                     foreach (var path in paths)
                     {
-                        var partialResult = await _scanEngine.ScanFolderAsync(path, settings);
+                        var partialResult = await Task.Run(async () => await _scanEngine.ScanFolderAsync(path, settings));
                         if (partialResult == null) continue;
 
                         foreach (var root in partialResult.RootFolders)
@@ -390,6 +392,10 @@ namespace FolderVision.Wpf
 
         private void OnScanCompleted(ScanResult result)
         {
+            // Update shared fields BEFORE stopping the timer so any last queued tick
+            // reads "Scan complete" instead of the stale path
+            _latestProgressPct = 100;
+            lock (_progressMsgLock) { _latestProgressMsg = "Scan complete"; }
             _progressTimer?.Stop();
             _progressTimer = null;
             UpdateProgress(100, "Scan complete");
