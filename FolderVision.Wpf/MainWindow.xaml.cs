@@ -29,9 +29,13 @@ namespace FolderVision.Wpf
         // Track current handler to avoid stale subscriptions
         private EventHandler<ProgressEventArgs>? _progressHandler;
 
-        // Throttle UI progress updates — avoid flooding the Dispatcher queue
-        private DateTime _lastProgressUpdate = DateTime.MinValue;
-        private const int ProgressThrottleMs = 120; // update UI at most ~8×/sec
+        // Progress polling: background threads write the latest value, UI timer reads it.
+        // Replaces Dispatcher.InvokeAsync — avoids queue accumulation from parallel threads.
+        private volatile int _latestProgressPct;
+        private string _latestProgressMsg = string.Empty;
+        private readonly object _progressMsgLock = new();
+        private System.Windows.Threading.DispatcherTimer? _progressTimer;
+        private const int ProgressPollMs = 120; // ~8 refreshes/sec
 
         // Set immediately on cancel so wind-down tasks don't overwrite the UI
         private bool _isCancelling;
@@ -287,20 +291,32 @@ namespace FolderVision.Wpf
 
             _scanEngine = new ScanEngine();
 
-            _lastProgressUpdate = DateTime.MinValue;
+            _latestProgressPct = 0;
+            _latestProgressMsg = "Starting scan...";
+
+            // Background threads just write the latest values — no dispatcher involved
             _progressHandler = (s, args) =>
             {
-                if (_isCancelling) return; // UI already shows cancelled state
-                var now = DateTime.Now;
-                var pct = Math.Min(100, args.PercentComplete);
-                // Always let the final 100% event through; throttle the rest
-                if (pct < 100 && (now - _lastProgressUpdate).TotalMilliseconds < ProgressThrottleMs) return;
-                _lastProgressUpdate = now;
-
+                if (_isCancelling) return;
+                _latestProgressPct = Math.Min(95, args.PercentComplete);
                 var msg = TruncatePath(args.CurrentPath, 60);
-                Dispatcher.InvokeAsync(() => UpdateProgress(pct, msg),
-                    System.Windows.Threading.DispatcherPriority.Background);
+                lock (_progressMsgLock) { _latestProgressMsg = msg; }
             };
+
+            // UI timer polls those values on the UI thread — no queue accumulation
+            _progressTimer?.Stop();
+            _progressTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(ProgressPollMs)
+            };
+            _progressTimer.Tick += (_, _) =>
+            {
+                if (!_isScanning) return;
+                string msg;
+                lock (_progressMsgLock) { msg = _latestProgressMsg; }
+                UpdateProgress(_latestProgressPct, msg);
+            };
+            _progressTimer.Start();
             _scanEngine.ProgressChanged += _progressHandler;
 
             try
@@ -363,6 +379,8 @@ namespace FolderVision.Wpf
         private void CancelScanButton_Click(object sender, RoutedEventArgs e)
         {
             _isCancelling = true;
+            _progressTimer?.Stop();
+            _progressTimer = null;
             _scanEngine?.CancelScan();
             // Update UI immediately — don't wait for tasks to wind down
             SetStatus("Scan cancelled.");
@@ -372,6 +390,8 @@ namespace FolderVision.Wpf
 
         private void OnScanCompleted(ScanResult result)
         {
+            _progressTimer?.Stop();
+            _progressTimer = null;
             UpdateProgress(100, "Scan complete");
             SetStatus($"Scan complete — {result.TotalFolders:N0} folders, {result.TotalFiles:N0} files in {result.ScanDuration.TotalSeconds:F1}s");
 
