@@ -33,6 +33,9 @@ namespace FolderVision.Wpf
         private DateTime _lastProgressUpdate = DateTime.MinValue;
         private const int ProgressThrottleMs = 120; // update UI at most ~8×/sec
 
+        // Set immediately on cancel so wind-down tasks don't overwrite the UI
+        private bool _isCancelling;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -265,6 +268,7 @@ namespace FolderVision.Wpf
             }
 
             _isScanning = true;
+            _isCancelling = false;
             _lastScanResult = null;
 
             SetScanningState(true);
@@ -286,6 +290,7 @@ namespace FolderVision.Wpf
             _lastProgressUpdate = DateTime.MinValue;
             _progressHandler = (s, args) =>
             {
+                if (_isCancelling) return; // UI already shows cancelled state
                 var now = DateTime.Now;
                 var pct = Math.Min(100, args.PercentComplete);
                 // Always let the final 100% event through; throttle the rest
@@ -327,10 +332,9 @@ namespace FolderVision.Wpf
                     aggregatedResult.UpdateTotals();
                 }
 
-                if (_scanEngine?.WasCancelled == true)
+                if (_isCancelling)
                 {
-                    SetStatus("Scan cancelled.");
-                    UpdateProgress(0, "Cancelled");
+                    // UI already updated immediately on cancel click — nothing to do
                 }
                 else if (aggregatedResult != null)
                 {
@@ -358,8 +362,11 @@ namespace FolderVision.Wpf
 
         private void CancelScanButton_Click(object sender, RoutedEventArgs e)
         {
+            _isCancelling = true;
             _scanEngine?.CancelScan();
-            SetStatus("Cancelling scan...");
+            // Update UI immediately — don't wait for tasks to wind down
+            SetStatus("Scan cancelled.");
+            UpdateProgress(0, "Cancelled");
             CancelScanButton.IsEnabled = false;
         }
 
