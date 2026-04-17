@@ -286,12 +286,12 @@ namespace FolderVision.Wpf
             _lastProgressUpdate = DateTime.MinValue;
             _progressHandler = (s, args) =>
             {
-                // Throttle: skip update if last one was less than ProgressThrottleMs ago
                 var now = DateTime.Now;
-                if ((now - _lastProgressUpdate).TotalMilliseconds < ProgressThrottleMs) return;
+                var pct = Math.Min(100, args.PercentComplete);
+                // Always let the final 100% event through; throttle the rest
+                if (pct < 100 && (now - _lastProgressUpdate).TotalMilliseconds < ProgressThrottleMs) return;
                 _lastProgressUpdate = now;
 
-                var pct = Math.Min(100, args.PercentComplete);
                 var msg = TruncatePath(args.CurrentPath, 60);
                 Dispatcher.InvokeAsync(() => UpdateProgress(pct, msg),
                     System.Windows.Threading.DispatcherPriority.Background);
