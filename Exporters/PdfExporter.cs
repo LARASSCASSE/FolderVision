@@ -314,19 +314,6 @@ namespace FolderVision.Exporters
             return Path.Combine(desktop, folderName, fileName);
         }
 
-        private DeviceRgb ParseHexColor(string hex)
-        {
-            hex = hex.TrimStart('#');
-            if (hex.Length != 6) return new DeviceRgb(0.4f, 0.49f, 0.92f);
-            try
-            {
-                var r = Convert.ToInt32(hex[..2], 16) / 255f;
-                var g = Convert.ToInt32(hex[2..4], 16) / 255f;
-                var b = Convert.ToInt32(hex[4..6], 16) / 255f;
-                return new DeviceRgb(r, g, b);
-            }
-            catch { return new DeviceRgb(0.4f, 0.49f, 0.92f); }
-        }
 
         private void ReportProgress(string currentItem)
         {

@@ -112,30 +112,6 @@ namespace FolderVision.Ui
         }
 
 
-        private string FormatTimeRemaining(TimeSpan timeRemaining)
-        {
-            if (timeRemaining == TimeSpan.MaxValue || timeRemaining.TotalSeconds < 0)
-                return "calculating...";
-
-            if (timeRemaining.TotalSeconds < 60)
-                return $"{timeRemaining.TotalSeconds:F0}s";
-
-            if (timeRemaining.TotalMinutes < 60)
-                return $"{timeRemaining.Minutes}m {timeRemaining.Seconds}s";
-
-            return $"{timeRemaining.Hours}h {timeRemaining.Minutes}m";
-        }
-
-        private string TruncatePath(string path, int maxLength)
-        {
-            if (string.IsNullOrEmpty(path) || path.Length <= maxLength)
-                return path ?? "";
-
-            if (maxLength <= 3)
-                return "...";
-
-            return "..." + path.Substring(path.Length - (maxLength - 3));
-        }
 
         public void CompleteScan()
         {
