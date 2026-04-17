@@ -535,6 +535,9 @@ namespace FolderVision.Core
             _cancellationTokenSource?.Cancel();
         }
 
+        /// <summary>True if the last scan was cancelled by the user.</summary>
+        public bool WasCancelled => _cancellationTokenSource?.IsCancellationRequested == true;
+
         public IReadOnlyList<string> GetErrors()
         {
             lock (_lockObject)

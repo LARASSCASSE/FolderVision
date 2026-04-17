@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,6 +28,10 @@ namespace FolderVision.Wpf
 
         // Track current handler to avoid stale subscriptions
         private EventHandler<ProgressEventArgs>? _progressHandler;
+
+        // Throttle UI progress updates — avoid flooding the Dispatcher queue
+        private DateTime _lastProgressUpdate = DateTime.MinValue;
+        private const int ProgressThrottleMs = 120; // update UI at most ~8×/sec
 
         public MainWindow()
         {
@@ -278,11 +283,18 @@ namespace FolderVision.Wpf
 
             _scanEngine = new ScanEngine();
 
+            _lastProgressUpdate = DateTime.MinValue;
             _progressHandler = (s, args) =>
             {
+                // Throttle: skip update if last one was less than ProgressThrottleMs ago
+                var now = DateTime.Now;
+                if ((now - _lastProgressUpdate).TotalMilliseconds < ProgressThrottleMs) return;
+                _lastProgressUpdate = now;
+
                 var pct = Math.Min(100, args.PercentComplete);
                 var msg = TruncatePath(args.CurrentPath, 60);
-                Dispatcher.InvokeAsync(() => UpdateProgress(pct, msg));
+                Dispatcher.InvokeAsync(() => UpdateProgress(pct, msg),
+                    System.Windows.Threading.DispatcherPriority.Background);
             };
             _scanEngine.ProgressChanged += _progressHandler;
 
@@ -315,7 +327,12 @@ namespace FolderVision.Wpf
                     aggregatedResult.UpdateTotals();
                 }
 
-                if (aggregatedResult != null)
+                if (_scanEngine?.WasCancelled == true)
+                {
+                    SetStatus("Scan cancelled.");
+                    UpdateProgress(0, "Cancelled");
+                }
+                else if (aggregatedResult != null)
                 {
                     _lastScanResult = aggregatedResult;
                     OnScanCompleted(aggregatedResult);
@@ -540,6 +557,7 @@ namespace FolderVision.Wpf
                     SetStatus("Exporting PDF...");
                     await new PdfExporter(pdfOptions).ExportAsync(_lastScanResult, dialog.FileName);
                     SetStatus($"PDF exported: {dialog.FileName}");
+                    OpenPdfIfRequested(dialog.FileName);
                     System.Windows.MessageBox.Show(
                         $"PDF report saved to:\n{dialog.FileName}",
                         "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -579,6 +597,7 @@ namespace FolderVision.Wpf
                     SetStatus($"Exporting PDF {i + 1}/{roots.Count}…");
                     await new PdfExporter(pdfOptions).ExportAsync(singleResult, dialog.FileName);
                     exported.Add(dialog.FileName);
+                    OpenPdfIfRequested(dialog.FileName);
                 }
 
                 if (exported.Count > 0)
@@ -639,6 +658,7 @@ namespace FolderVision.Wpf
                     SetStatus($"Exporting PDF {i + 1}/{total}…");
                     await new PdfExporter(tabOptions).ExportAsync(singleResult, dialog.FileName);
                     exported.Add(dialog.FileName);
+                    OpenPdfIfRequested(dialog.FileName);
                 }
 
                 if (exported.Count > 0)
@@ -663,6 +683,17 @@ namespace FolderVision.Wpf
         // ─────────────────────────────────────────────────────────────────────
         //  HELPERS
         // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>Opens the PDF with the default viewer if the user opted in.</summary>
+        private void OpenPdfIfRequested(string path)
+        {
+            if (OpenAfterExportCheckBox.IsChecked != true) return;
+            try
+            {
+                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+            }
+            catch { /* viewer not available — silently ignore */ }
+        }
 
         private ScanSettings BuildScanSettings()
         {
