@@ -75,21 +75,18 @@ namespace FolderVision.Wpf
         /// <summary>Adds a list of folder paths, skipping duplicates and non-existent ones.</summary>
         private int AddFolderPaths(IEnumerable<string> paths)
         {
+            var existing = new HashSet<string>(
+                PathsListBox.Items.Cast<string>(),
+                StringComparer.OrdinalIgnoreCase);
+
             var added = 0;
             foreach (var path in paths)
             {
                 if (!Directory.Exists(path)) continue;
+                if (!existing.Add(path)) continue;  // Add returns false if already present
 
-                var duplicate = false;
-                foreach (var item in PathsListBox.Items)
-                    if (string.Equals(item.ToString(), path, StringComparison.OrdinalIgnoreCase))
-                    { duplicate = true; break; }
-
-                if (!duplicate)
-                {
-                    PathsListBox.Items.Add(path);
-                    added++;
-                }
+                PathsListBox.Items.Add(path);
+                added++;
             }
             if (added > 0) UpdateStartButtonState();
             return added;

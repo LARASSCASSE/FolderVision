@@ -6,6 +6,14 @@ namespace FolderVision.Utils
 {
     public static class FileHelper
     {
+        // Cached set — allocated once, reused on every CreateCleanFolderName call
+        private static readonly HashSet<string> GenericFolders = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Program Files", "Program Files (x86)", "Users", "Documents", "Downloads",
+            "Desktop", "Pictures", "Videos", "Music", "AppData", "Local", "Roaming",
+            "Windows", "System32", "bin", "lib", "src", "data", "temp", "tmp"
+        };
+
         public static string FormatFileSize(long bytes)
         {
             return FileSizeFormatter.FormatDefault(bytes);
@@ -132,14 +140,7 @@ namespace FolderVision.Utils
                 var parentFolder = segments[segments.Length - 2];
 
                 // Check if parent folder is generic
-                var genericFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    "Program Files", "Program Files (x86)", "Users", "Documents", "Downloads",
-                    "Desktop", "Pictures", "Videos", "Music", "AppData", "Local", "Roaming",
-                    "Windows", "System32", "bin", "lib", "src", "data", "temp", "tmp"
-                };
-
-                if (genericFolders.Contains(parentFolder))
+                if (GenericFolders.Contains(parentFolder))
                 {
                     folderName = lastFolder;
                 }

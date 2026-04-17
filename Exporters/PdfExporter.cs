@@ -136,7 +136,7 @@ namespace FolderVision.Exporters
             // Direct children — names only, no recursion
             foreach (var child in root.SubFolders.OrderBy(f => f.Name))
             {
-                var name = string.IsNullOrEmpty(child.Name) ? child.FullPath : child.Name;
+                var name = string.IsNullOrWhiteSpace(child.Name) ? child.FullPath : child.Name;
                 Document.Add(new Paragraph(name)
                     .SetFont(RegularFont).SetFontSize(10)
                     .SetMarginLeft(IndentPerDepth)
@@ -256,7 +256,7 @@ namespace FolderVision.Exporters
 
             ReportProgress(folder.Name);
 
-            var name      = string.IsNullOrEmpty(folder.Name) ? folder.FullPath : folder.Name;
+            var name      = string.IsNullOrWhiteSpace(folder.Name) ? folder.FullPath : folder.Name;
             var sub       = folder.SubFolders.Count;
             var stats     = $"{sub} {(sub == 1 ? "folder" : "folders")}  |  {folder.FileCount} files";
             var fontSize  = depth <= 2 ? 10f : 9f;
@@ -318,7 +318,7 @@ namespace FolderVision.Exporters
         private void ReportProgress(string currentItem)
         {
             _currentItem++;
-            var percent = _totalItems > 0 ? (_currentItem * 100) / _totalItems : 0;
+            var percent = _totalItems > 0 ? (int)((_currentItem * 100.0) / _totalItems) : 0;
             ExportProgress?.Invoke(this, new ExportProgressEventArgs
             {
                 PercentComplete  = Math.Min(100, percent),

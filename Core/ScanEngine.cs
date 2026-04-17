@@ -282,8 +282,9 @@ namespace FolderVision.Core
                     }
                 }, cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                LogError($"Unexpected error getting subdirectories in {directoryInfo.FullName}: {ex.Message}");
                 return Array.Empty<DirectoryInfo>();
             }
         }
