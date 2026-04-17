@@ -32,6 +32,7 @@ namespace FolderVision.Wpf
         // Throttle UI progress updates — avoid flooding the Dispatcher queue
         private DateTime _lastProgressUpdate = DateTime.MinValue;
         private const int ProgressThrottleMs = 120; // update UI at most ~8×/sec
+        private int _maxProgressShown; // prevents bar from going backwards
 
         public MainWindow()
         {
@@ -284,6 +285,7 @@ namespace FolderVision.Wpf
             _scanEngine = new ScanEngine();
 
             _lastProgressUpdate = DateTime.MinValue;
+            _maxProgressShown = 0;
             _progressHandler = (s, args) =>
             {
                 var now = DateTime.Now;
@@ -291,6 +293,9 @@ namespace FolderVision.Wpf
                 // Always let the final 100% event through; throttle the rest
                 if (pct < 100 && (now - _lastProgressUpdate).TotalMilliseconds < ProgressThrottleMs) return;
                 _lastProgressUpdate = now;
+                // Never let the bar go backwards during a scan
+                if (pct < _maxProgressShown) return;
+                _maxProgressShown = pct;
 
                 var msg = TruncatePath(args.CurrentPath, 60);
                 Dispatcher.InvokeAsync(() => UpdateProgress(pct, msg),
