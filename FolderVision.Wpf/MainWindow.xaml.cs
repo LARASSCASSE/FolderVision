@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Forms;
 using FolderVision.Core;
 using FolderVision.Core.Logging;
 using FolderVision.Exporters;
