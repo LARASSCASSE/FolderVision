@@ -399,6 +399,10 @@ namespace FolderVision.Wpf
             _progressTimer?.Stop();
             _progressTimer = null;
             UpdateProgress(100, "Scan complete");
+            // ApplicationIdle fires only when the Dispatcher queue is fully empty —
+            // guarantees no stale timer tick can overwrite the final value
+            Dispatcher.InvokeAsync(() => UpdateProgress(100, "Scan complete"),
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             SetStatus($"Scan complete — {result.TotalFolders:N0} folders, {result.TotalFiles:N0} files in {result.ScanDuration.TotalSeconds:F1}s");
 
             TotalFoldersLabel.Text = result.TotalFolders.ToString("N0");
