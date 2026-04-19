@@ -151,9 +151,43 @@ namespace FolderVision.Wpf
 
         private void ClearAllPathsButton_Click(object sender, RoutedEventArgs e)
         {
+            // Stop any running scan
+            if (_isScanning)
+            {
+                _isCancelling = true;
+                if (_isPaused) { _isPaused = false; _scanEngine?.Resume(); }
+                _progressTimer?.Stop();
+                _progressTimer = null;
+                _scanEngine?.CancelScan();
+            }
+
+            // Reset everything to initial state
             PathsListBox.Items.Clear();
-            UpdateStartButtonState();
-            SetStatus("All paths cleared.");
+            _lastScanResult = null;
+            _isScanning = false;
+
+            // Reset scan controls
+            SetScanningState(false);
+            UpdateProgress(0, string.Empty);
+            SetStatus(string.Empty);
+
+            // Reset results panel
+            StatsBlock.Visibility = Visibility.Collapsed;
+            ExportPdfButton.IsEnabled = false;
+
+            // Reset tree
+            FolderTreeView.Items.Clear();
+            FolderTreeView.Visibility = Visibility.Collapsed;
+            TreePlaceholder.Visibility = Visibility.Visible;
+
+            // Reset tabs (remove all preview tabs, keep only Folder Structure)
+            var toRemove = RightTabControl.Items
+                .OfType<System.Windows.Controls.TabItem>()
+                .Where(t => t.Header?.ToString() != "Folder Structure")
+                .ToList();
+            foreach (var tab in toRemove)
+                RightTabControl.Items.Remove(tab);
+            RightTabControl.SelectedIndex = 0;
         }
 
         private void RemovePathItem_Click(object sender, RoutedEventArgs e)
