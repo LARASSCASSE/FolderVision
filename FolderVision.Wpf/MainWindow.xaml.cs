@@ -40,6 +40,9 @@ namespace FolderVision.Wpf
         // Set immediately on cancel so wind-down tasks don't overwrite the UI
         private bool _isCancelling;
 
+        // Pause state
+        private bool _isPaused;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -380,6 +383,12 @@ namespace FolderVision.Wpf
 
         private void CancelScanButton_Click(object sender, RoutedEventArgs e)
         {
+            // Resume first so paused tasks can see the cancellation token
+            if (_isPaused)
+            {
+                _isPaused = false;
+                _scanEngine?.Resume();
+            }
             _isCancelling = true;
             _progressTimer?.Stop();
             _progressTimer = null;
@@ -388,6 +397,25 @@ namespace FolderVision.Wpf
             SetStatus("Scan cancelled.");
             UpdateProgress(0, "Cancelled");
             CancelScanButton.IsEnabled = false;
+            PauseScanButton.IsEnabled = false;
+        }
+
+        private void PauseScanButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isPaused)
+            {
+                _isPaused = false;
+                _scanEngine?.Resume();
+                PauseScanButton.Content = "⏸";
+                SetStatus("Scan resumed...");
+            }
+            else
+            {
+                _isPaused = true;
+                _scanEngine?.Pause();
+                PauseScanButton.Content = "▶";
+                SetStatus("Scan paused.");
+            }
         }
 
         private void OnScanCompleted(ScanResult result)
@@ -753,6 +781,13 @@ namespace FolderVision.Wpf
         {
             StartScanButton.IsEnabled = !scanning && PathsListBox.Items.Count > 0;
             CancelScanButton.IsEnabled = scanning;
+            PauseScanButton.IsEnabled = scanning;
+            if (!scanning)
+            {
+                // Reset pause button for next scan
+                _isPaused = false;
+                PauseScanButton.Content = "⏸";
+            }
             AddPathButton.IsEnabled = !scanning;
             ThreadsSlider.IsEnabled = !scanning;
             SkipHiddenCheckBox.IsEnabled = !scanning;

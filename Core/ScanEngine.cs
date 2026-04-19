@@ -39,11 +39,26 @@ namespace FolderVision.Core
         private bool _useProgressiveEstimation;
         private Logger? _logger;
 
+        // Pause/resume — async-friendly gate using TaskCompletionSource
+        private volatile TaskCompletionSource<bool> _pauseTcs;
+
         public ScanEngine()
         {
             _errors = new List<string>();
-            _useProgressiveEstimation = true; // Enable progressive estimation by default
+            _useProgressiveEstimation = true;
+            _pauseTcs = MakeCompletedTcs(); // starts in "running" state
         }
+
+        private static TaskCompletionSource<bool> MakeCompletedTcs()
+        {
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            tcs.SetResult(true);
+            return tcs;
+        }
+
+        public void Pause()  { _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously); }
+        public void Resume() { _pauseTcs.TrySetResult(true); }
+        public bool IsPaused => !_pauseTcs.Task.IsCompleted;
 
         public async Task<ScanResult> ScanFolderAsync(string folderPath, ScanSettings settings)
         {
@@ -70,6 +85,7 @@ namespace FolderVision.Core
 
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource(settings.GlobalTimeout);
+            _pauseTcs = MakeCompletedTcs(); // ensure not paused at scan start
             _processedDirectories = 0;
             _estimatedDirectories = 1; // Start with 1 for the root directory
             lock (_lockObject)
@@ -131,6 +147,9 @@ namespace FolderVision.Core
         {
             if (cancellationToken.IsCancellationRequested)
                 return null;
+
+            // Pause gate — awaits here when paused, returns immediately when running
+            await _pauseTcs.Task.ConfigureAwait(false);
 
             // Check depth limit to prevent stack overflow
             if (currentDepth >= settings.MaxDepth)
