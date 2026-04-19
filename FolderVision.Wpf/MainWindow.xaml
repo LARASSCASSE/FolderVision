@@ -411,7 +411,7 @@
                                     IsEnabled="False"
 />
 
-                            <Grid Margin="0,0,0,24" Height="34">
+                            <Grid Margin="0,0,0,24" Height="34" Width="260">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="4*"/>
                                     <ColumnDefinition Width="8"/>
@@ -425,10 +425,12 @@
                                         IsEnabled="False"/>
                                 <Button x:Name="PauseScanButton"
                                         Grid.Column="2"
-                                        Content="⏸"
+                                        Content="II"
                                         Style="{StaticResource DefaultButton}"
                                         Click="PauseScanButton_Click"
-                                        IsEnabled="False"/>
+                                        IsEnabled="False"
+                                        FontWeight="Bold"
+                                        FontSize="11"/>
                             </Grid>
 
                             <ProgressBar x:Name="ScanProgressBar"

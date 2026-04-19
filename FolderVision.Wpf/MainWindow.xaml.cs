@@ -406,7 +406,7 @@ namespace FolderVision.Wpf
             {
                 _isPaused = false;
                 _scanEngine?.Resume();
-                PauseScanButton.Content = "⏸";
+                PauseScanButton.Content = "II";
                 SetStatus("Scan resumed...");
             }
             else
@@ -420,8 +420,9 @@ namespace FolderVision.Wpf
 
         private void OnScanCompleted(ScanResult result)
         {
-            // Update shared fields BEFORE stopping the timer so any last queued tick
-            // reads "Scan complete" instead of the stale path
+            // Set _isScanning=false first so any timer tick already in the Dispatcher
+            // queue sees it and returns early (timer tick checks if (!_isScanning) return)
+            _isScanning = false;
             _latestProgressPct = 100;
             lock (_progressMsgLock) { _latestProgressMsg = "Scan complete"; }
             _progressTimer?.Stop();
@@ -786,7 +787,7 @@ namespace FolderVision.Wpf
             {
                 // Reset pause button for next scan
                 _isPaused = false;
-                PauseScanButton.Content = "⏸";
+                PauseScanButton.Content = "II";
             }
             AddPathButton.IsEnabled = !scanning;
             ThreadsSlider.IsEnabled = !scanning;
