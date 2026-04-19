@@ -180,13 +180,9 @@ namespace FolderVision.Wpf
             FolderTreeView.Visibility = Visibility.Collapsed;
             TreePlaceholder.Visibility = Visibility.Visible;
 
-            // Reset tabs (remove all preview tabs, keep only Folder Structure)
-            var toRemove = RightTabControl.Items
-                .OfType<System.Windows.Controls.TabItem>()
-                .Where(t => t.Header?.ToString() != "Folder Structure")
-                .ToList();
-            foreach (var tab in toRemove)
-                RightTabControl.Items.Remove(tab);
+            // Remove dynamically-added preview tabs (keep only the first fixed tab)
+            while (RightTabControl.Items.Count > 1)
+                RightTabControl.Items.RemoveAt(1);
             RightTabControl.SelectedIndex = 0;
         }
 
