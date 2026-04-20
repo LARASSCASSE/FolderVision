@@ -83,7 +83,7 @@
                     <TextBlock x:Name="NodeLabel"
                                Text="{Binding DisplayName}"
                                MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"
-                               ToolTip="{Binding Source.FullPath}">
+>
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource NodeTextBlock}">
                                 <Style.Triggers>

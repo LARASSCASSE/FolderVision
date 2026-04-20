@@ -121,26 +121,6 @@ namespace FolderVision.Core
             }
         }
 
-        public void UpdateProgress(long processedItems)
-        {
-            // This method is kept for backward compatibility
-            lock (_lockObject)
-            {
-                _lastUpdateTime = DateTime.Now;
-                RaiseProgressChanged();
-            }
-        }
-
-        public void IncrementProgress(long increment = 1)
-        {
-            // This method is kept for backward compatibility
-            lock (_lockObject)
-            {
-                _lastUpdateTime = DateTime.Now;
-                RaiseProgressChanged();
-            }
-        }
-
         private void RaiseProgressChanged()
         {
             var args = new ProgressChangedEventArgs

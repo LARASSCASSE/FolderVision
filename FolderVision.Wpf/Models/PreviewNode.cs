@@ -24,18 +24,15 @@ namespace FolderVision.Wpf.Models
             get => _children;
             set
             {
-                // Unsubscribe old
-                if (_children != null)
-                {
-                    _children.CollectionChanged -= Children_CollectionChanged;
-                    foreach (var c in _children) c.PropertyChanged -= Child_PropertyChanged;
-                }
-                _children = value;
-                if (_children != null)
-                {
-                    _children.CollectionChanged += Children_CollectionChanged;
-                    foreach (var c in _children) c.PropertyChanged += Child_PropertyChanged;
-                }
+                // Unsubscribe old (always non-null — field is initialized to new())
+                _children.CollectionChanged -= Children_CollectionChanged;
+                foreach (var c in _children) c.PropertyChanged -= Child_PropertyChanged;
+
+                _children = value ?? new();
+
+                _children.CollectionChanged += Children_CollectionChanged;
+                foreach (var c in _children) c.PropertyChanged += Child_PropertyChanged;
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ShowUncheckButton));
             }

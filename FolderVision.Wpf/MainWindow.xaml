@@ -304,12 +304,12 @@
                                 <TextBlock Grid.Column="0" Text="Report Depth"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            VerticalAlignment="Center" FontSize="12"/>
-                                <TextBlock x:Name="ReportDepthLabel" Grid.Column="1" Text="2"
+                                <TextBlock x:Name="ReportDepthLabel" Grid.Column="1" Text="0"
                                            Foreground="{StaticResource AccentBlueBrush}"
                                            FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
                             </Grid>
                             <Slider x:Name="ReportDepthSlider"
-                                    Minimum="0" Maximum="10" Value="2"
+                                    Minimum="0" Maximum="10" Value="0"
                                     TickFrequency="1" IsSnapToTickEnabled="True"
                                     Margin="0,0,0,4"
                                     ValueChanged="ReportDepthSlider_ValueChanged"
@@ -433,21 +433,24 @@
                                         FontSize="11"/>
                             </Grid>
 
-                            <ProgressBar x:Name="ScanProgressBar"
-                                         Value="0"
-                                         Maximum="100"
-                                         Height="10"
-                                         Width="260"
-                                         Margin="0,0,0,8"/>
+                            <StackPanel x:Name="ProgressSection"
+                                        Visibility="Collapsed">
+                                <ProgressBar x:Name="ScanProgressBar"
+                                             Value="0"
+                                             Maximum="100"
+                                             Height="10"
+                                             Width="260"
+                                             Margin="0,0,0,8"/>
 
-                            <TextBlock x:Name="ProgressLabel"
-                                       Text="No scan running"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       FontSize="11"
-                                       TextAlignment="Center"
-                                       HorizontalAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       MaxWidth="260"/>
+                                <TextBlock x:Name="ProgressLabel"
+                                           Text=""
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="11"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="260"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
 
@@ -545,6 +548,38 @@
                                       BorderThickness="0"
                                       VirtualizingPanel.IsVirtualizing="True"
                                       VirtualizingPanel.VirtualizationMode="Recycling"/>
+
+                            <!-- Spinner visible entre fin de scan et affichage de l'arbre -->
+                            <Grid x:Name="TreeLoadingSpinner"
+                                  Visibility="Collapsed"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                                <!-- Track (dim) -->
+                                <Ellipse Width="48" Height="48"
+                                         Stroke="#33FFFFFF" StrokeThickness="4" Fill="Transparent"/>
+                                <!-- Arc rotatif -->
+                                <Ellipse Width="48" Height="48" Fill="Transparent"
+                                         Stroke="#FF4C7FDB" StrokeThickness="4"
+                                         StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                         StrokeDashArray="10 20"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform x:Name="SpinnerRotateTransform" Angle="0"/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation
+                                                        Storyboard.TargetName="SpinnerRotateTransform"
+                                                        Storyboard.TargetProperty="Angle"
+                                                        From="0" To="360" Duration="0:0:1"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                            </Grid>
                         </Grid>
                     </TabItem>
 

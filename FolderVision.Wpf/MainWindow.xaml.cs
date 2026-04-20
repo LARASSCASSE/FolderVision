@@ -390,7 +390,7 @@ namespace FolderVision.Wpf
                 else if (aggregatedResult != null)
                 {
                     _lastScanResult = aggregatedResult;
-                    OnScanCompleted(aggregatedResult);
+                    await OnScanCompletedAsync(aggregatedResult);
                 }
                 else
                 {
@@ -448,7 +448,7 @@ namespace FolderVision.Wpf
             }
         }
 
-        private void OnScanCompleted(ScanResult result)
+        private async Task OnScanCompletedAsync(ScanResult result)
         {
             // Set _isScanning=false first so any timer tick already in the Dispatcher
             // queue sees it and returns early (timer tick checks if (!_isScanning) return)
@@ -460,7 +460,7 @@ namespace FolderVision.Wpf
             UpdateProgress(100, "Scan complete");
             // ApplicationIdle fires only when the Dispatcher queue is fully empty —
             // guarantees no stale timer tick can overwrite the final value
-            Dispatcher.InvokeAsync(() => UpdateProgress(100, "Scan complete"),
+            _ = Dispatcher.InvokeAsync(() => UpdateProgress(100, "Scan complete"),
                 System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             SetStatus($"Scan complete — {result.TotalFolders:N0} folders, {result.TotalFiles:N0} files in {result.ScanDuration.TotalSeconds:F1}s");
 
@@ -471,9 +471,19 @@ namespace FolderVision.Wpf
                 : $"{result.ScanDuration.TotalSeconds:F2}s";
             StatsBlock.Visibility = Visibility.Visible;
 
-            PopulateTree(result);
-            RefreshPreviewTabs(result);
+            // Show spinner while tree builds; hide placeholder + old tree
+            TreePlaceholder.Visibility    = Visibility.Collapsed;
+            FolderTreeView.Visibility     = Visibility.Collapsed;
+            TreeLoadingSpinner.Visibility = Visibility.Visible;
 
+            // Yield so the spinner renders at least one frame before blocking work begins
+            await Task.Yield();
+
+            PopulateTree(result);   // lazy loading → fast, no UI freeze
+
+            TreeLoadingSpinner.Visibility = Visibility.Collapsed;
+
+            RefreshPreviewTabs(result);
             ExportPdfButton.IsEnabled = true;
         }
 
@@ -593,7 +603,7 @@ namespace FolderVision.Wpf
             return panel;
         }
 
-        private TreeViewItem BuildTreeItem(FolderInfo folder, bool isRoot = false)
+        private TreeViewItem BuildTreeItem(FolderInfo folder, bool isRoot = false, int depth = 0)
         {
             var displayName = isRoot
                 ? folder.FullPath
@@ -606,13 +616,45 @@ namespace FolderVision.Wpf
                 Header = header,
                 IsExpanded = false,
                 ToolTip = folder.FullPath,
+                Tag = folder,
                 Margin = isRoot ? new System.Windows.Thickness(0, 40, 0, 4) : new System.Windows.Thickness(0)
             };
 
-            foreach (var sub in folder.SubFolders)
-                item.Items.Add(BuildTreeItem(sub));
+            if (folder.SubFolders.Count > 0)
+            {
+                if (depth < 1)
+                {
+                    // Root (depth 0): eagerly build direct children with their own placeholders
+                    foreach (var sub in folder.SubFolders)
+                        item.Items.Add(BuildTreeItem(sub, depth: depth + 1));
+                }
+                else
+                {
+                    // Depth 1+: add placeholder — children load on first expand
+                    item.Items.Add(new TreeViewItem { Header = "Loading..." });
+                    item.Expanded += OnTreeItemExpanded;
+                }
+            }
 
             return item;
+        }
+
+        private void OnTreeItemExpanded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not TreeViewItem item) return;
+            // Guard: only trigger when the single "Loading..." placeholder is present
+            if (item.Items.Count != 1
+                || item.Items[0] is not TreeViewItem placeholder
+                || placeholder.Header?.ToString() != "Loading...") return;
+
+            item.Expanded -= OnTreeItemExpanded;
+            item.Items.Clear();
+
+            if (item.Tag is FolderInfo folder)
+            {
+                foreach (var sub in folder.SubFolders)
+                    item.Items.Add(BuildTreeItem(sub, depth: 1));
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -828,8 +870,10 @@ namespace FolderVision.Wpf
 
         private void UpdateProgress(int percent, string message)
         {
-            ScanProgressBar.Value = Math.Min(100, Math.Max(0, percent));
-            ProgressLabel.Text = message;
+            var show = !string.IsNullOrEmpty(message);
+            ScanProgressBar.Value       = Math.Min(100, Math.Max(0, percent));
+            ProgressLabel.Text          = message;
+            ProgressSection.Visibility  = show ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SetStatus(string message)

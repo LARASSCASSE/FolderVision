@@ -13,7 +13,6 @@ namespace FolderVision.Core
     {
         private readonly int _maxConcurrency;
         private readonly SemaphoreSlim _semaphore;
-        private readonly ConcurrentQueue<Task> _taskQueue;
         private readonly ConcurrentDictionary<int, ThreadInfo> _threadInfos;
         private readonly object _lockObject = new object();
         private CancellationTokenSource? _cancellationTokenSource;
@@ -24,7 +23,6 @@ namespace FolderVision.Core
         {
             _maxConcurrency = Math.Max(1, maxConcurrency == 0 ? Environment.ProcessorCount : maxConcurrency);
             _semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
-            _taskQueue = new ConcurrentQueue<Task>();
             _threadInfos = new ConcurrentDictionary<int, ThreadInfo>();
         }
 
@@ -271,7 +269,6 @@ namespace FolderVision.Core
         }
 
         public int ActiveTasks => _activeTasks;
-        public int QueuedTasks => _taskQueue.Count;
         public int MaxConcurrency => _maxConcurrency;
 
         public void Dispose()
