@@ -563,24 +563,61 @@ namespace FolderVision.Wpf
 
             if (DetectDuplicatesCheckBox.IsChecked != true) return;
 
-            var byName = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            // Step 1 — group all folders by exact name (case-insensitive)
+            var byName = new Dictionary<string, List<FolderInfo>>(StringComparer.OrdinalIgnoreCase);
             foreach (var folder in result.GetAllFolders())
             {
                 var name = folder.Name;
                 if (string.IsNullOrEmpty(name)) continue;
                 if (!byName.TryGetValue(name, out var list))
-                    byName[name] = list = new List<string>();
-                list.Add(folder.FullPath);
+                    byName[name] = list = new List<FolderInfo>();
+                list.Add(folder);
             }
 
+            // Step 2 — content similarity filter: a folder is kept only if it
+            // shares at least 1 direct child subfolder name with another candidate
+            // (or same FileCount > 0 when both are leaf folders with no subfolders)
             foreach (var kvp in byName)
             {
-                if (kvp.Value.Count > 1)
+                var candidates = kvp.Value;
+                if (candidates.Count < 2) continue;
+
+                var kept = candidates
+                    .Where(f => candidates.Any(other =>
+                        !ReferenceEquals(other, f) && HaveSimilarContent(f, other)))
+                    .ToList();
+
+                if (kept.Count >= 2)
                 {
                     _duplicateFolderNames.Add(kvp.Key);
-                    _duplicateGroups[kvp.Key] = kvp.Value.OrderBy(p => p).ToList();
+                    _duplicateGroups[kvp.Key] = kept
+                        .Select(f => f.FullPath).OrderBy(p => p).ToList();
                 }
             }
+        }
+
+        /// Returns true when two same-named folders likely contain the same content.
+        /// Criteria: share ≥ 1 direct child subfolder name,
+        ///           OR both are leaf folders (no subfolders) with the same non-zero FileCount.
+        private static bool HaveSimilarContent(FolderInfo a, FolderInfo b)
+        {
+            var childNamesA = a.SubFolders
+                .Select(s => s.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var childNamesB = b.SubFolders
+                .Select(s => s.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Both leaf folders → compare file counts
+            if (childNamesA.Count == 0 && childNamesB.Count == 0)
+                return a.FileCount > 0 && a.FileCount == b.FileCount;
+
+            // One has subfolders, the other doesn't → not the same folder
+            if (childNamesA.Count == 0 || childNamesB.Count == 0)
+                return false;
+
+            // At least one shared direct child subfolder name
+            return childNamesA.Overlaps(childNamesB);
         }
 
         private void NavigateToDuplicate(string folderName, string currentPath)
