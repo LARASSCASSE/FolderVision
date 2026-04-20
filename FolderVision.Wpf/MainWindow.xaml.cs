@@ -596,9 +596,14 @@ namespace FolderVision.Wpf
             }
         }
 
-        /// Returns true when two same-named folders likely contain the same content.
-        /// Criteria: share ≥ 1 direct child subfolder name,
-        ///           OR both are leaf folders (no subfolders) with the same non-zero FileCount.
+        /// Returns true when two same-named folders are likely genuine duplicates.
+        /// Criteria:
+        ///   - Both leaf folders (no subfolders): exact same non-zero FileCount
+        ///   - Folders with subfolders: Jaccard similarity of direct child subfolder
+        ///     names ≥ 0.8  AND  same direct FileCount
+        ///     → requires ≥80 % of child names to match, weeds out coincidental
+        ///       name-sharing across structurally different directories (e.g. the
+        ///       many "Adobe" folders spread across Program Files / AppData / ProgramData)
         private static bool HaveSimilarContent(FolderInfo a, FolderInfo b)
         {
             var childNamesA = a.SubFolders
@@ -608,16 +613,20 @@ namespace FolderVision.Wpf
                 .Select(s => s.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // Both leaf folders → compare file counts
+            // Both leaf folders → exact same non-zero FileCount
             if (childNamesA.Count == 0 && childNamesB.Count == 0)
                 return a.FileCount > 0 && a.FileCount == b.FileCount;
 
-            // One has subfolders, the other doesn't → not the same folder
+            // Structural mismatch: one has subfolders, the other doesn't
             if (childNamesA.Count == 0 || childNamesB.Count == 0)
                 return false;
 
-            // At least one shared direct child subfolder name
-            return childNamesA.Overlaps(childNamesB);
+            // Jaccard similarity on direct child subfolder names
+            int common  = childNamesA.Count(n => childNamesB.Contains(n));
+            int union   = childNamesA.Count + childNamesB.Count - common;
+            double jaccard = (double)common / union;
+
+            return jaccard >= 0.8 && a.FileCount == b.FileCount;
         }
 
         private void NavigateToDuplicate(string folderName, string currentPath)
