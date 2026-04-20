@@ -280,9 +280,12 @@
 />
                             <CheckBox x:Name="SkipSystemCheckBox"
                                       Content="Skip System Folders" IsChecked="True"
+                                      Margin="0,0,0,8"
+                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                            <CheckBox x:Name="DetectDuplicatesCheckBox"
+                                      Content="Detect duplicate folders"
                                       Margin="0,0,0,0"
-                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-/>
+                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
                         </StackPanel>
                     </Border>
 

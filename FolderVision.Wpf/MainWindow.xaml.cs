@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Animation;
 using FolderVision.Core;
 using FolderVision.Core.Logging;
 using FolderVision.Exporters;
@@ -20,6 +21,13 @@ namespace FolderVision.Wpf
         private bool _isScanning;
         // Preview tabs: index 0 in RightTabControl = "Folder Structure" (fixed), 1..N = preview tabs
         private readonly List<TabItem> _previewTabs = new();
+
+        // Duplicate folder detection
+        private HashSet<string>                    _duplicateFolderNames = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, List<string>>   _duplicateGroups      = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, TreeViewItem>   _pathToTreeItem       = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, Border>         _pathToFlashBorder    = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int>   _duplicateNavIndex    = new(StringComparer.OrdinalIgnoreCase);
 
         // Tab strip scroll
         private System.Windows.Controls.ScrollViewer? _tabHeaderScroll;
@@ -180,10 +188,17 @@ namespace FolderVision.Wpf
             FolderTreeView.Visibility = Visibility.Collapsed;
             TreePlaceholder.Visibility = Visibility.Visible;
 
-            // Remove dynamically-added preview tabs (keep only the first fixed tab)
+            // Remove dynamically-added tabs (keep only the first fixed tab)
             while (RightTabControl.Items.Count > 1)
                 RightTabControl.Items.RemoveAt(1);
             RightTabControl.SelectedIndex = 0;
+
+            // Clear duplicate-folder state
+            _duplicateFolderNames.Clear();
+            _duplicateGroups.Clear();
+            _pathToTreeItem.Clear();
+            _pathToFlashBorder.Clear();
+            _duplicateNavIndex.Clear();
         }
 
         private void RemovePathItem_Click(object sender, RoutedEventArgs e)
@@ -476,6 +491,9 @@ namespace FolderVision.Wpf
             FolderTreeView.Visibility     = Visibility.Collapsed;
             TreeLoadingSpinner.Visibility = Visibility.Visible;
 
+            // Compute duplicate folder names before building the tree (needed by BuildTreeItem)
+            ComputeDuplicateFolderNames(result);
+
             // Yield so the spinner renders at least one frame before blocking work begins
             await Task.Yield();
 
@@ -533,6 +551,129 @@ namespace FolderVision.Wpf
             if (_tabScrollRightBtn != null)
                 _tabScrollRightBtn.Visibility = _tabHeaderScroll.HorizontalOffset < _tabHeaderScroll.ScrollableWidth
                     ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ComputeDuplicateFolderNames(ScanResult result)
+        {
+            _duplicateFolderNames.Clear();
+            _duplicateGroups.Clear();
+            _pathToTreeItem.Clear();
+            _pathToFlashBorder.Clear();
+            _duplicateNavIndex.Clear();
+
+            if (DetectDuplicatesCheckBox.IsChecked != true) return;
+
+            var byName = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var folder in result.GetAllFolders())
+            {
+                var name = folder.Name;
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!byName.TryGetValue(name, out var list))
+                    byName[name] = list = new List<string>();
+                list.Add(folder.FullPath);
+            }
+
+            foreach (var kvp in byName)
+            {
+                if (kvp.Value.Count > 1)
+                {
+                    _duplicateFolderNames.Add(kvp.Key);
+                    _duplicateGroups[kvp.Key] = kvp.Value.OrderBy(p => p).ToList();
+                }
+            }
+        }
+
+        private void NavigateToDuplicate(string folderName, string currentPath)
+        {
+            if (!_duplicateGroups.TryGetValue(folderName, out var paths)) return;
+
+            if (!_duplicateNavIndex.TryGetValue(folderName, out int idx)) idx = 0;
+
+            // Advance to next occurrence, skipping the one we just clicked
+            int start = idx;
+            do { idx = (idx + 1) % paths.Count; }
+            while (paths[idx].Equals(currentPath, StringComparison.OrdinalIgnoreCase) && idx != start);
+
+            _duplicateNavIndex[folderName] = idx;
+            var targetPath = paths[idx];
+
+            // Ensure all ancestor tree items are expanded and built
+            ExpandAncestors(targetPath);
+
+            // Scroll + flash
+            if (_pathToTreeItem.TryGetValue(targetPath, out var tvi) && tvi != null)
+            {
+                tvi.BringIntoView();
+                FlashTreeItem(targetPath);
+            }
+        }
+
+        private void ExpandAncestors(string targetPath)
+        {
+            foreach (TreeViewItem rootItem in FolderTreeView.Items)
+            {
+                if (rootItem.Tag is FolderInfo rootFolder
+                    && targetPath.StartsWith(rootFolder.FullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    ExpandToPath(rootItem, rootFolder, targetPath);
+                    break;
+                }
+            }
+        }
+
+        private bool ExpandToPath(TreeViewItem item, FolderInfo folder, string targetPath)
+        {
+            if (folder.FullPath.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Force-expand lazy placeholder if present
+            if (item.Items.Count == 1
+                && item.Items[0] is TreeViewItem ph
+                && ph.Header?.ToString() == "Loading...")
+            {
+                item.Expanded -= OnTreeItemExpanded;
+                item.Items.Clear();
+                foreach (var sub in folder.SubFolders)
+                    item.Items.Add(BuildTreeItem(sub, depth: 1));
+            }
+
+            item.IsExpanded = true;
+
+            int ci = 0;
+            foreach (var sub in folder.SubFolders)
+            {
+                if (targetPath.StartsWith(sub.FullPath + Path.DirectorySeparatorChar,
+                        StringComparison.OrdinalIgnoreCase)
+                    || targetPath.Equals(sub.FullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (ci < item.Items.Count && item.Items[ci] is TreeViewItem childItem)
+                        return ExpandToPath(childItem, sub, targetPath);
+                }
+                ci++;
+            }
+
+            return false;
+        }
+
+        private void FlashTreeItem(string path)
+        {
+            if (!_pathToFlashBorder.TryGetValue(path, out var border)) return;
+
+            var flashColor = System.Windows.Media.Color.FromArgb(0x55, 0xB8, 0x5C, 0x5C);
+
+            var brush = new System.Windows.Media.SolidColorBrush(flashColor);
+            border.Background = brush;
+
+            var anim = new ColorAnimationUsingKeyFrames
+            {
+                Duration = new Duration(TimeSpan.FromMilliseconds(1400))
+            };
+            anim.KeyFrames.Add(new DiscreteColorKeyFrame(flashColor,  KeyTime.FromPercent(0.0)));
+            anim.KeyFrames.Add(new LinearColorKeyFrame(flashColor,    KeyTime.FromPercent(0.2)));
+            anim.KeyFrames.Add(new LinearColorKeyFrame(
+                System.Windows.Media.Colors.Transparent, KeyTime.FromPercent(1.0)));
+
+            brush.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty, anim);
         }
 
         private void TabScrollLeft_Click(object sender, RoutedEventArgs e)
@@ -609,16 +750,80 @@ namespace FolderVision.Wpf
                 ? folder.FullPath
                 : (string.IsNullOrEmpty(folder.Name) ? folder.FullPath : folder.Name);
 
-            var header = $"📁 {displayName}  ({folder.SubFolders.Count} folders | {folder.FileCount} files)";
+            var stats = $"  ({folder.SubFolders.Count} folders | {folder.FileCount} files)";
+            bool isDuplicate = !isRoot && _duplicateFolderNames.Contains(folder.Name ?? "");
+
+            FrameworkElement header;
+
+            if (isDuplicate)
+            {
+                var paths   = _duplicateGroups[folder.Name!];
+                var navText = $"⇄ {paths.Count}";
+
+                // Flash-able background border
+                var flashBorder = new Border
+                {
+                    Background   = System.Windows.Media.Brushes.Transparent,
+                    CornerRadius = new CornerRadius(3),
+                    Padding      = new Thickness(2, 1, 4, 1)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var tb = new TextBlock
+                {
+                    Text      = $"📁 {displayName}{stats}",
+                    Foreground = new System.Windows.Media.SolidColorBrush(
+                                    System.Windows.Media.Color.FromRgb(0xB8, 0x5C, 0x5C)),
+                    FontWeight        = FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(tb, 0);
+
+                var navBtn = new System.Windows.Controls.Button
+                {
+                    Content           = navText,
+                    Padding           = new Thickness(5, 1, 5, 1),
+                    Margin            = new Thickness(8, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    ToolTip           = $"{paths.Count} folders named \"{folder.Name}\" — click to navigate",
+                    Tag               = folder.FullPath,
+                    Style             = (Style)FindResource("DuplicateNavButton")
+                };
+                var capturedName = folder.Name!;
+                var capturedPath = folder.FullPath;
+                navBtn.Click += (s, e) =>
+                {
+                    e.Handled = true;
+                    NavigateToDuplicate(capturedName, capturedPath);
+                };
+                Grid.SetColumn(navBtn, 1);
+
+                grid.Children.Add(tb);
+                grid.Children.Add(navBtn);
+                flashBorder.Child = grid;
+                header = flashBorder;
+
+                _pathToFlashBorder[folder.FullPath] = flashBorder;
+            }
+            else
+            {
+                header = new TextBlock { Text = $"📁 {displayName}{stats}" };
+            }
 
             var item = new TreeViewItem
             {
-                Header = header,
+                Header     = header,
                 IsExpanded = false,
-                ToolTip = folder.FullPath,
-                Tag = folder,
-                Margin = isRoot ? new System.Windows.Thickness(0, 40, 0, 4) : new System.Windows.Thickness(0)
+                ToolTip    = folder.FullPath,
+                Tag        = folder,
+                Margin     = isRoot ? new Thickness(0, 40, 0, 4) : new Thickness(0)
             };
+
+            if (isDuplicate)
+                _pathToTreeItem[folder.FullPath] = item;
 
             if (folder.SubFolders.Count > 0)
             {
@@ -864,8 +1069,9 @@ namespace FolderVision.Wpf
             AddPathButton.IsEnabled = !scanning;
             ThreadsSlider.IsEnabled = !scanning;
             SkipHiddenCheckBox.IsEnabled = !scanning;
-            SkipSystemCheckBox.IsEnabled = !scanning;
-            ReportDepthSlider.IsEnabled = !scanning;
+            SkipSystemCheckBox.IsEnabled       = !scanning;
+            DetectDuplicatesCheckBox.IsEnabled = !scanning;
+            ReportDepthSlider.IsEnabled        = !scanning;
         }
 
         private void UpdateProgress(int percent, string message)
