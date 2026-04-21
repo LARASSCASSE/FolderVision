@@ -699,9 +699,48 @@ namespace FolderVision.Wpf
             // Scroll + flash
             if (_pathToTreeItem.TryGetValue(targetPath, out var tvi) && tvi != null)
             {
+                // BringIntoView first so the item enters the visual tree if it was off-screen
                 tvi.BringIntoView();
+
+                // Then center it — run after layout so TransformToAncestor has valid coords
+                Dispatcher.InvokeAsync(() => ScrollToCenterTreeItem(tvi),
+                    System.Windows.Threading.DispatcherPriority.ContextIdle);
+
                 FlashTreeItem(targetPath);
             }
+        }
+
+        /// Scrolls the TreeView so <paramref name="tvi"/> is vertically centred in the viewport.
+        private void ScrollToCenterTreeItem(TreeViewItem tvi)
+        {
+            var scrollViewer = FindVisualChild<ScrollViewer>(FolderTreeView);
+            if (scrollViewer == null) return;
+
+            try
+            {
+                var transform   = tvi.TransformToAncestor(scrollViewer);
+                var itemTop     = transform.Transform(new System.Windows.Point(0, 0)).Y;
+                var centerOffset = scrollViewer.VerticalOffset + itemTop
+                                   - (scrollViewer.ViewportHeight / 2)
+                                   + (tvi.ActualHeight / 2);
+
+                scrollViewer.ScrollToVerticalOffset(Math.Max(0, centerOffset));
+            }
+            catch { /* item not yet in visual tree — BringIntoView already handled it */ }
+        }
+
+        private static T? FindVisualChild<T>(System.Windows.DependencyObject parent)
+            where T : System.Windows.DependencyObject
+        {
+            int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T hit) return hit;
+                var found = FindVisualChild<T>(child);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private void ExpandAncestors(string targetPath)
