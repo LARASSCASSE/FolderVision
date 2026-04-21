@@ -22,7 +22,12 @@ if %errorlevel% neq 0 (
     echo  ERREUR : la publication a echoue.
     pause & exit /b 1
 )
-echo  OK : publish_out\FolderVision.Wpf.exe genere.
+
+:: Rename to FolderVision.exe
+if exist publish_out\FolderVision.Wpf.exe (
+    rename publish_out\FolderVision.Wpf.exe FolderVision.exe
+)
+echo  OK : publish_out\FolderVision.exe genere.
 echo.
 
 :: ── 2. Compiler l'installeur Inno Setup ──────────────────
@@ -53,13 +58,9 @@ if %errorlevel% neq 0 (
     pause & exit /b 1
 )
 
-:: ── 3. Signer les executables ────────────────────────────
-echo  [3/3] Signature du code (suppression SmartScreen)...
-powershell -ExecutionPolicy Bypass -File installer\sign.ps1
-
 echo.
 echo  ====================================================
-echo   Succes !  ->  FolderVision_Setup.exe  (signe)
+echo   Succes !  ->  FolderVision_Setup.exe
 echo  ====================================================
 echo.
 pause
