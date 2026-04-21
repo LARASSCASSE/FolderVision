@@ -127,8 +127,9 @@
                 BorderBrush="#FF4A4A4D"
                 BorderThickness="0,0,0,1"
                 Padding="10,7">
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Vertical">
                 <!-- Toggle: Header PDF -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <CheckBox x:Name="IncludeHeaderCheckBox"
                           Style="{StaticResource DarkCheckBox}"
                           IsChecked="False"
@@ -149,12 +150,12 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
+                </StackPanel>
 
                 <!-- Toggle: Duplicate folders (visible only when duplicates exist) -->
                 <StackPanel x:Name="DuplicatesTogglePanel"
                             Orientation="Horizontal"
-                            Visibility="Collapsed"
-                            Margin="20,0,0,0">
+                            Visibility="Collapsed">
                     <CheckBox x:Name="IncludeDuplicatesCheckBox"
                               Style="{StaticResource DarkCheckBox}"
                               IsChecked="False"
