@@ -584,7 +584,9 @@ namespace FolderVision.Wpf
 
                 var kept = candidates
                     .Where(f => candidates.Any(other =>
-                        !ReferenceEquals(other, f) && HaveSimilarContent(f, other)))
+                        !ReferenceEquals(other, f)
+                        && !IsAncestorOrDescendant(f.FullPath, other.FullPath)
+                        && HaveSimilarContent(f, other)))
                     .ToList();
 
                 if (kept.Count >= 2)
@@ -594,6 +596,18 @@ namespace FolderVision.Wpf
                         .Select(f => f.FullPath).OrderBy(p => p).ToList();
                 }
             }
+        }
+
+        /// Returns true when pathA is a direct ancestor or descendant of pathB
+        /// (i.e. one path is a sub-path of the other — same-tree comparisons are invalid).
+        private static bool IsAncestorOrDescendant(string pathA, string pathB)
+        {
+            var sep = Path.DirectorySeparatorChar;
+            // Normalise: ensure trailing separator so "C:\foo" doesn't match "C:\foobar"
+            var a = pathA.TrimEnd(sep) + sep;
+            var b = pathB.TrimEnd(sep) + sep;
+            return a.StartsWith(b, StringComparison.OrdinalIgnoreCase)
+                || b.StartsWith(a, StringComparison.OrdinalIgnoreCase);
         }
 
         /// Returns true when two same-named folders are likely genuine duplicates.
