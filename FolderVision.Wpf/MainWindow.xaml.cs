@@ -563,35 +563,61 @@ namespace FolderVision.Wpf
 
             if (DetectDuplicatesCheckBox.IsChecked != true) return;
 
-            // Step 1 — group all folders by exact name (case-insensitive)
-            var byName = new Dictionary<string, List<FolderInfo>>(StringComparer.OrdinalIgnoreCase);
+            // Step 1 — index each folder with the scan root it belongs to.
+            // A duplicate must come from TWO DIFFERENT scan roots (different paths the
+            // user added to the scan list).  Folders that repeat within the same root
+            // are organisational siblings, not accidental copies.
+            var sep = Path.DirectorySeparatorChar;
+
+            string RootOf(string fullPath)
+            {
+                foreach (var root in result.RootFolders)
+                {
+                    var r = root.FullPath.TrimEnd(sep) + sep;
+                    if (fullPath.StartsWith(r, StringComparison.OrdinalIgnoreCase)
+                        || fullPath.Equals(root.FullPath, StringComparison.OrdinalIgnoreCase))
+                        return root.FullPath;
+                }
+                return fullPath; // fallback: treat as its own root
+            }
+
+            // name → list of (folder, rootPath)
+            var byName = new Dictionary<string, List<(FolderInfo Folder, string Root)>>(
+                StringComparer.OrdinalIgnoreCase);
+
             foreach (var folder in result.GetAllFolders())
             {
                 var name = folder.Name;
                 if (string.IsNullOrEmpty(name)) continue;
                 if (!byName.TryGetValue(name, out var list))
-                    byName[name] = list = new List<FolderInfo>();
-                list.Add(folder);
+                    byName[name] = list = new List<(FolderInfo, string)>();
+                list.Add((folder, RootOf(folder.FullPath)));
             }
 
-            // Step 2 — content similarity filter + ancestor/descendant exclusion
+            // Step 2 — only keep candidates that have a match in a DIFFERENT root,
+            //           plus the usual content-similarity and ancestor/descendant checks.
             foreach (var kvp in byName)
             {
                 var candidates = kvp.Value;
-                if (candidates.Count < 2) continue;
+
+                // Need at least 2 distinct roots represented
+                if (candidates.Select(x => x.Root)
+                               .Distinct(StringComparer.OrdinalIgnoreCase)
+                               .Count() < 2) continue;
 
                 var kept = candidates
                     .Where(f => candidates.Any(other =>
-                        !ReferenceEquals(other, f)
-                        && !IsAncestorOrDescendant(f.FullPath, other.FullPath)
-                        && HaveSimilarContent(f, other)))
+                        !ReferenceEquals(other.Folder, f.Folder)
+                        && !other.Root.Equals(f.Root, StringComparison.OrdinalIgnoreCase)
+                        && !IsAncestorOrDescendant(f.Folder.FullPath, other.Folder.FullPath)
+                        && HaveSimilarContent(f.Folder, other.Folder)))
                     .ToList();
 
                 if (kept.Count >= 2)
                 {
                     _duplicateFolderNames.Add(kvp.Key);
                     _duplicateGroups[kvp.Key] = kept
-                        .Select(f => f.FullPath).OrderBy(p => p).ToList();
+                        .Select(x => x.Folder.FullPath).OrderBy(p => p).ToList();
                 }
             }
 
