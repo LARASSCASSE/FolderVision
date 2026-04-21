@@ -613,12 +613,20 @@ namespace FolderVision.Wpf
                         && HaveSimilarContent(f.Folder, other.Folder)))
                     .ToList();
 
-                if (kept.Count >= 2)
-                {
-                    _duplicateFolderNames.Add(kvp.Key);
-                    _duplicateGroups[kvp.Key] = kept
-                        .Select(x => x.Folder.FullPath).OrderBy(p => p).ToList();
-                }
+                if (kept.Count < 2) continue;
+
+                // Reject groups where any single scan root contributes more than
+                // one occurrence.  Multiple hits within one root means it's a
+                // common structural pattern (bin/, src/, locale/ inside many packages),
+                // not an accidental copy that was pasted to another drive.
+                bool tooCommonWithinRoot = kept
+                    .GroupBy(x => x.Root, StringComparer.OrdinalIgnoreCase)
+                    .Any(g => g.Count() > 1);
+                if (tooCommonWithinRoot) continue;
+
+                _duplicateFolderNames.Add(kvp.Key);
+                _duplicateGroups[kvp.Key] = kept
+                    .Select(x => x.Folder.FullPath).OrderBy(p => p).ToList();
             }
 
             // Step 3 — suppress child duplicates whose parent is already flagged.
