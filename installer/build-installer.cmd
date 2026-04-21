@@ -53,9 +53,13 @@ if %errorlevel% neq 0 (
     pause & exit /b 1
 )
 
+:: ── 3. Signer les executables ────────────────────────────
+echo  [3/3] Signature du code (suppression SmartScreen)...
+powershell -ExecutionPolicy Bypass -File installer\sign.ps1
+
 echo.
 echo  ====================================================
-echo   Succes !  ->  FolderVision_Setup.exe
+echo   Succes !  ->  FolderVision_Setup.exe  (signe)
 echo  ====================================================
 echo.
 pause

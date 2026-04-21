@@ -95,3 +95,4 @@ Thumbs.db
 # User settings
 *.local.json
 !.claude/settings.local.json
+*.pfx
