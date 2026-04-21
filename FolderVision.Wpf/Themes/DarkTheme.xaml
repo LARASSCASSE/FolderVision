@@ -236,6 +236,11 @@
     <!-- Slider Style -->
     <Style TargetType="Slider">
         <Setter Property="Foreground" Value="{StaticResource AccentBlueBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.35"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ListBox Style -->
