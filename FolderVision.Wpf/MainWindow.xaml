@@ -295,20 +295,28 @@
                                           Foreground="{StaticResource TextMutedBrush}" FontSize="11"
                                           Checked="ApproximateDuplicatesCheckBox_Changed"
                                           Unchecked="ApproximateDuplicatesCheckBox_Changed"/>
-                                <Grid x:Name="SimilaritySliderPanel" Margin="0,4,0,0" IsEnabled="False">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="38"/>
-                                    </Grid.ColumnDefinitions>
+                                <StackPanel x:Name="SimilaritySliderPanel" Margin="0,6,0,0" IsEnabled="False">
+                                    <!-- Header row: label left, value right -->
+                                    <Grid Margin="0,0,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Min. similarity"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="SimilarityLabel" Grid.Column="1"
+                                                   Text="80%"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AccentBlueBrush}"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
                                     <Slider x:Name="SimilaritySlider"
                                             Minimum="10" Maximum="100" Value="80"
                                             TickFrequency="10" IsSnapToTickEnabled="True"
-                                            TickPlacement="BottomRight"
                                             ValueChanged="SimilaritySlider_ValueChanged"/>
-                                    <TextBlock x:Name="SimilarityLabel" Grid.Column="1"
-                                               Text="80%" TextAlignment="Right" VerticalAlignment="Center"
-                                               FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                </Grid>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </Border>
