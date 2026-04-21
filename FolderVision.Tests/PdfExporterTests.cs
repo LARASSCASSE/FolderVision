@@ -85,9 +85,9 @@ namespace FolderVision.Tests
         // ─────────────────────────────────────────────────────────────────────
 
         [Fact]
-        public void PdfExportOptions_Default_UseEmojisIsFalse()
+        public void PdfExportOptions_Default_IncludesHeader()
         {
-            Assert.False(PdfExportOptions.Default.UseEmojis);
+            Assert.True(PdfExportOptions.Default.IncludeHeader);
         }
 
         // ─────────────────────────────────────────────────────────────────────

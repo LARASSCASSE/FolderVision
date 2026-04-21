@@ -1207,9 +1207,8 @@ namespace FolderVision.Wpf
                     // Per-tab options (inherit base options + tab-specific IncludeHeader)
                     var tabOptions = new PdfExportOptions
                     {
-                        MaxTreeDepth      = pdfOptions.MaxTreeDepth,
-                        IncludeHeader     = previewContent.IncludeHeader,
-                        IncludeFolderTree = pdfOptions.IncludeFolderTree
+                        MaxTreeDepth  = pdfOptions.MaxTreeDepth,
+                        IncludeHeader = previewContent.IncludeHeader
                     };
 
                     var dialog = new Microsoft.Win32.SaveFileDialog

@@ -47,11 +47,10 @@ namespace FolderVision.Tests
         {
             var options = PdfExportOptions.Default;
 
-            Assert.Equal(ColorScheme.Default, options.ColorScheme);
-            Assert.True(options.IncludeFolderTree);
-            Assert.False(options.IncludeStatistics);        // stats removed from default output
-            Assert.False(options.IncludeTableOfContents);  // TOC removed from default output
-            Assert.False(options.UseEmojis);               // HELVETICA can't render emoji
+            Assert.True(options.IncludeHeader);
+            Assert.Equal(8, options.MaxTreeDepth);
+            Assert.Equal(10, options.FontSize);
+            Assert.True(options.IncludeDuplicates);
         }
 
         [Fact]
@@ -59,9 +58,6 @@ namespace FolderVision.Tests
         {
             var options = PdfExportOptions.Compact;
 
-            Assert.False(options.UseEmojis);
-            Assert.False(options.IncludeStatistics);
-            Assert.False(options.IncludeTableOfContents);
             Assert.Equal(3, options.MaxTreeDepth);
         }
 

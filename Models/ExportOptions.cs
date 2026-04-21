@@ -96,114 +96,47 @@ namespace FolderVision.Models
     }
 
     /// <summary>
-    /// Configuration options for PDF export customization
+    /// Configuration options for PDF export customization.
+    /// Only contains properties actually consumed by PdfExporter.
     /// </summary>
     public class PdfExportOptions
     {
-        /// <summary>
-        /// Color scheme for the PDF export
-        /// </summary>
-        public ColorScheme ColorScheme { get; set; } = ColorScheme.Default;
-
-        /// <summary>
-        /// Whether to include the folder tree section
-        /// </summary>
-        public bool IncludeFolderTree { get; set; } = true;
-
-        /// <summary>
-        /// Whether to include the statistics section (disabled by default — key stats are shown inline on page 2)
-        /// </summary>
-        public bool IncludeStatistics { get; set; } = false;
-
-        /// <summary>
-        /// Whether to include the table of contents (disabled by default)
-        /// </summary>
-        public bool IncludeTableOfContents { get; set; } = false;
-
-        /// <summary>
-        /// Whether to include the header with scan info
-        /// </summary>
+        /// <summary>Whether to include the scan-info header on each page.</summary>
         public bool IncludeHeader { get; set; } = true;
 
-        /// <summary>
-        /// Whether to use emojis in the report.
-        /// Disabled by default: standard PDF fonts (Helvetica) do not support Unicode emoji
-        /// and will render them as blank squares. Enable only if using an emoji-capable embedded font.
-        /// </summary>
-        public bool UseEmojis { get; set; } = false;
-
-        /// <summary>
-        /// Custom title for the report (null uses default)
-        /// </summary>
+        /// <summary>Custom title for the report (null uses auto-generated title).</summary>
         public string? CustomTitle { get; set; }
 
-        /// <summary>
-        /// File size formatting options
-        /// </summary>
-        public FileSizeFormattingOptions FileSizeFormat { get; set; } = FileSizeFormattingOptions.Default;
-
-        /// <summary>
-        /// Maximum depth to show in folder tree (0 = unlimited)
-        /// </summary>
+        /// <summary>Maximum depth to show in the folder tree (0 = unlimited).</summary>
         public int MaxTreeDepth { get; set; } = 8;
 
-        /// <summary>
-        /// Font size for body text
-        /// </summary>
+        /// <summary>Font size for body text.</summary>
         public int FontSize { get; set; } = 10;
 
-        /// <summary>
-        /// Whether to add page numbers
-        /// </summary>
-        public bool IncludePageNumbers { get; set; } = true;
-
-        /// <summary>
-        /// Whether to append a dedicated "Duplicate Folders" page at the end of the PDF
-        /// </summary>
+        /// <summary>Whether to append a dedicated "Duplicate Folders" page.</summary>
         public bool IncludeDuplicates { get; set; } = true;
 
         /// <summary>
-        /// Duplicate folder groups to render on the duplicate page.
+        /// Duplicate folder groups for the duplicate page.
         /// Key = folder name, Value = sorted list of full paths.
         /// Null or empty = no duplicate page rendered.
         /// </summary>
         public Dictionary<string, List<string>>? DuplicateGroups { get; set; }
 
-        /// <summary>
-        /// Default PDF export options
-        /// </summary>
+        /// <summary>Default options.</summary>
         public static PdfExportOptions Default => new PdfExportOptions();
 
-        /// <summary>
-        /// Compact PDF export (minimal sections, limited depth)
-        /// </summary>
-        public static PdfExportOptions Compact => new PdfExportOptions
-        {
-            UseEmojis = false,
-            IncludeStatistics = false,
-            IncludeTableOfContents = false,
-            MaxTreeDepth = 3
-        };
+        /// <summary>Compact options: limited tree depth.</summary>
+        public static PdfExportOptions Compact => new PdfExportOptions { MaxTreeDepth = 3 };
 
-        /// <summary>
-        /// French localized export
-        /// </summary>
+        /// <summary>French localized report title.</summary>
         public static PdfExportOptions French => new PdfExportOptions
         {
-            FileSizeFormat = FileSizeFormattingOptions.French,
             CustomTitle = "Rapport de Scan de Dossiers"
         };
 
-        /// <summary>
-        /// Detailed PDF export (all sections, deeper tree)
-        /// </summary>
-        public static PdfExportOptions Detailed => new PdfExportOptions
-        {
-            IncludeFolderTree = true,
-            IncludeStatistics = true,
-            IncludeTableOfContents = true,
-            MaxTreeDepth = 10
-        };
+        /// <summary>Detailed options: deeper tree.</summary>
+        public static PdfExportOptions Detailed => new PdfExportOptions { MaxTreeDepth = 10 };
     }
 
     /// <summary>
