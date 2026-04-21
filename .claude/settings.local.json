@@ -154,7 +154,9 @@
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && grep \"^using FolderVision\" {} || true')",
       "Bash(rm -f Program.cs Ui/ConsoleUI.cs Ui/ProgressDisplay.cs Exporters/HtmlExporter.cs Utils/PlatformHelper.cs test-html-output.html scan-D-drive.ps1 simulate-startup.sh build.cmd build.sh)",
       "Bash(rmdir Ui)",
-      "Bash(rm -rf Tests/Manual FolderVisionLauncher)"
+      "Bash(rm -rf Tests/Manual FolderVisionLauncher)",
+      "Bash(git mv *)",
+      "Bash(git add *)"
     ],
     "deny": [],
     "ask": []

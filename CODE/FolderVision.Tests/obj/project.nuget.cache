@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "aXal7qWm31U=",
+  "dgSpecHash": "3vufH3+Gvbc=",
   "success": true,
-  "projectFilePath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
+  "projectFilePath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\CODE\\FolderVision.Tests\\FolderVision.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Pascal\\.nuget\\packages\\bouncycastle.cryptography\\2.2.1\\bouncycastle.cryptography.2.2.1.nupkg.sha512",
     "C:\\Users\\Pascal\\.nuget\\packages\\coverlet.collector\\6.0.2\\coverlet.collector.6.0.2.nupkg.sha512",

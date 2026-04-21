@@ -5596,11 +5596,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
+      "projectUniqueName": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\CODE\\FolderVision.Tests\\FolderVision.Tests.csproj",
       "projectName": "FolderVision.Tests",
-      "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\FolderVision.Tests.csproj",
+      "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\CODE\\FolderVision.Tests\\FolderVision.Tests.csproj",
       "packagesPath": "C:\\Users\\Pascal\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.Tests\\obj\\",
+      "outputPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\CODE\\FolderVision.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Pascal\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -5615,8 +5615,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj": {
-              "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\FolderVision.csproj"
+            "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\CODE\\FolderVision.csproj": {
+              "projectPath": "D:\\Projects\\FolderVision\\.claude\\worktrees\\trusting-carson\\CODE\\FolderVision.csproj"
             }
           }
         }
