@@ -690,13 +690,18 @@ namespace FolderVision.Wpf
         ///       many "Adobe" folders spread across Program Files / AppData / ProgramData)
         private static bool HaveSimilarContent(FolderInfo a, FolderInfo b)
         {
-            // ── Level 1: recursive totals (fast rejection, strong signal) ──────
-            // If the full trees differ in total file count or subfolder count,
-            // they cannot be the same folder — no need to go further.
+            // ── Level 1: exact direct counts ─────────────────────────────────
+            // A copy-pasted folder has the same number of immediate children.
+            // Different direct subfolder or file counts → definitely not the same.
+            if (a.SubFolders.Count != b.SubFolders.Count) return false;
+            if (a.FileCount        != b.FileCount)        return false;
+
+            // ── Level 2: recursive totals ─────────────────────────────────────
+            // Same total file+subfolder count across the whole tree.
             if (a.GetTotalFileCount()      != b.GetTotalFileCount())      return false;
             if (a.GetTotalSubFolderCount() != b.GetTotalSubFolderCount()) return false;
 
-            // ── Level 2: direct-child structure ──────────────────────────────
+            // ── Level 3: direct-child name structure ──────────────────────────
             var childNamesA = a.SubFolders
                 .Select(s => s.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -704,21 +709,16 @@ namespace FolderVision.Wpf
                 .Select(s => s.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // Leaf folders: recursive totals already matched above — that's enough
+            // Leaf folders: all numeric checks already passed — valid duplicate
             if (childNamesA.Count == 0 && childNamesB.Count == 0)
-                return a.FileCount > 0 || a.GetTotalFileCount() > 0;
+                return true;
 
-            // One has subfolders, the other doesn't — structurally different
-            if (childNamesA.Count == 0 || childNamesB.Count == 0)
-                return false;
-
-            // ── Level 3: Jaccard ≥ 0.8 on direct child subfolder names ───────
+            // ── Level 4: Jaccard ≥ 0.8 on direct child subfolder names ───────
             int common = childNamesA.Count(n => childNamesB.Contains(n));
             int union  = childNamesA.Count + childNamesB.Count - common;
             double jaccard = (double)common / union;
 
             return jaccard >= 0.8;
-            // (direct FileCount already implied by GetTotalFileCount equality above)
         }
 
         private void NavigateToDuplicate(string folderName, string currentPath)
