@@ -124,9 +124,9 @@
                         <!-- SCAN PATHS — plus grande que les autres -->
                         <RowDefinition Height="1.6*"/>
                         <!-- SCAN SETTINGS -->
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="1.15*"/>
                         <!-- EXPORT SETTINGS -->
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="0.85*"/>
                     </Grid.RowDefinitions>
 
                     <!-- ── SCAN PATHS ── -->
