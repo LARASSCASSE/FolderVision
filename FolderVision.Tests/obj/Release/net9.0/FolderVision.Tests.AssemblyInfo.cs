@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FolderVision.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+375263d3f6b84f1b732629f033f28aa9a44bcc6a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+180902fe8ae7fe8a951a9425c3895b86bf9022b6")]
 [assembly: System.Reflection.AssemblyProductAttribute("FolderVision.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FolderVision.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

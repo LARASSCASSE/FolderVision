@@ -1,47 +1,9 @@
-using FolderVision.Exporters;
 using FolderVision.Models;
 
 namespace FolderVision.Tests
 {
     public class ExporterTests
     {
-        [Fact]
-        public void HtmlExportOptions_Default_HasCorrectValues()
-        {
-            var options = HtmlExportOptions.Default;
-
-            Assert.Equal(ColorScheme.Default, options.ColorScheme);
-            Assert.True(options.IncludeFolderTree);
-            Assert.True(options.IncludeStatistics);
-            Assert.True(options.UseEmojis);
-        }
-
-        [Fact]
-        public void HtmlExportOptions_Compact_HasMinimalSettings()
-        {
-            var options = HtmlExportOptions.Compact;
-
-            Assert.False(options.UseEmojis);
-            Assert.False(options.IncludeStatistics);
-            Assert.Equal(3, options.MaxTreeDepth);
-        }
-
-        [Theory]
-        [InlineData(ColorScheme.Blue)]
-        [InlineData(ColorScheme.Green)]
-        [InlineData(ColorScheme.Red)]
-        [InlineData(ColorScheme.Dark)]
-        [InlineData(ColorScheme.Monochrome)]
-        public void HtmlExportOptions_ColorScheme_CanBeSet(ColorScheme scheme)
-        {
-            var options = new HtmlExportOptions
-            {
-                ColorScheme = scheme
-            };
-
-            Assert.Equal(scheme, options.ColorScheme);
-        }
-
         [Fact]
         public void PdfExportOptions_Default_HasCorrectValues()
         {
@@ -62,13 +24,19 @@ namespace FolderVision.Tests
         }
 
         [Fact]
-        public void ColorSchemeHelper_GetColors_ReturnsCorrectColors()
+        public void PdfExportOptions_Detailed_HasDeepTree()
         {
-            var (primary, secondary, accent) = ColorSchemeHelper.GetColors(ColorScheme.Blue);
+            var options = PdfExportOptions.Detailed;
 
-            Assert.Equal("#3182ce", primary);
-            Assert.Equal("#2c5282", secondary);
-            Assert.Equal("#4299e1", accent);
+            Assert.Equal(10, options.MaxTreeDepth);
+        }
+
+        [Fact]
+        public void PdfExportOptions_French_HasCustomTitle()
+        {
+            var options = PdfExportOptions.French;
+
+            Assert.Equal("Rapport de Scan de Dossiers", options.CustomTitle);
         }
     }
 }

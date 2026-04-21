@@ -147,7 +147,14 @@
       "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\Pascal' -Filter 'FolderVision.Wpf.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object FullName, LastWriteTime\")",
       "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\Projects\\\\FolderVision' -Filter 'FolderVision.Wpf.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object FullName, LastWriteTime\")",
       "Bash(grep -rn \"private.*\\\\sstring\\\\?\" \"/d/Projects/FolderVision/.claude/worktrees/trusting-carson\" --include=\"*.cs\" ! -path \"*/obj/*\" ! -path \"*/Tests/*\")",
-      "Bash(powershell -Command \"Remove-Item 'D:\\\\Projects\\\\FolderVision\\\\.claude\\\\worktrees\\\\trusting-carson\\\\Models\\\\ScanResultExtensions.cs' -Force; Write-Host 'Deleted ScanResultExtensions.cs'\")"
+      "Bash(powershell -Command \"Remove-Item 'D:\\\\Projects\\\\FolderVision\\\\.claude\\\\worktrees\\\\trusting-carson\\\\Models\\\\ScanResultExtensions.cs' -Force; Write-Host 'Deleted ScanResultExtensions.cs'\")",
+      "Bash(grep -E \"\\\\.\\(xaml|cs\\)$\")",
+      "Bash(awk '{print $NF}')",
+      "Bash(xargs -I {} basename {})",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && grep \"^using FolderVision\" {} || true')",
+      "Bash(rm -f Program.cs Ui/ConsoleUI.cs Ui/ProgressDisplay.cs Exporters/HtmlExporter.cs Utils/PlatformHelper.cs test-html-output.html scan-D-drive.ps1 simulate-startup.sh build.cmd build.sh)",
+      "Bash(rmdir Ui)",
+      "Bash(rm -rf Tests/Manual FolderVisionLauncher)"
     ],
     "deny": [],
     "ask": []

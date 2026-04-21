@@ -141,9 +141,6 @@ D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bi
 D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\xunit.runner.visualstudio.testadapter.dll
 D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\xunit.runner.reporters.netcoreapp10.dll
 D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\xunit.runner.utility.netcoreapp10.dll
-D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\FolderVision.deps.json
-D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\FolderVision.runtimeconfig.json
-D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\FolderVision.exe
 D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\FolderVision.Tests.deps.json
 D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\FolderVision.Tests.runtimeconfig.json
 D:\Projects\FolderVision\.claude\worktrees\trusting-carson\FolderVision.Tests\bin\Release\net9.0\FolderVision.Tests.dll
