@@ -910,7 +910,8 @@ namespace FolderVision.Wpf
             foreach (var root in result.RootFolders)
             {
                 var content = new PreviewTabContent();
-                content.Initialize(root, maxDepth);
+                content.Initialize(root, maxDepth,
+                    _duplicateGroups.Count > 0 ? _duplicateGroups : null);
 
                 var tab = new TabItem { Content = content };
                 tab.Header = BuildPreviewTabHeader($"scan {idx++}", tab);
@@ -1184,12 +1185,16 @@ namespace FolderVision.Wpf
                             singleResult.AddScannedPath(p);
                     singleResult.UpdateTotals();
 
-                    // Per-tab options (inherit base options + tab-specific IncludeHeader)
+                    // Per-tab options (inherit base options + tab-specific toggles)
                     var tabOptions = new PdfExportOptions
                     {
-                        MaxTreeDepth    = pdfOptions.MaxTreeDepth,
-                        IncludeHeader   = previewContent.IncludeHeader,
-                        IncludeFolderTree = pdfOptions.IncludeFolderTree
+                        MaxTreeDepth      = pdfOptions.MaxTreeDepth,
+                        IncludeHeader     = previewContent.IncludeHeader,
+                        IncludeFolderTree = pdfOptions.IncludeFolderTree,
+                        IncludeDuplicates = previewContent.IncludeDuplicates,
+                        DuplicateGroups   = previewContent.IncludeDuplicates
+                                            ? previewContent.DuplicateGroups
+                                            : null
                     };
 
                     var dialog = new Microsoft.Win32.SaveFileDialog

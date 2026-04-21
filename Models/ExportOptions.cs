@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FolderVision.Utils;
 
 namespace FolderVision.Models
@@ -155,6 +156,18 @@ namespace FolderVision.Models
         /// Whether to add page numbers
         /// </summary>
         public bool IncludePageNumbers { get; set; } = true;
+
+        /// <summary>
+        /// Whether to append a dedicated "Duplicate Folders" page at the end of the PDF
+        /// </summary>
+        public bool IncludeDuplicates { get; set; } = true;
+
+        /// <summary>
+        /// Duplicate folder groups to render on the duplicate page.
+        /// Key = folder name, Value = sorted list of full paths.
+        /// Null or empty = no duplicate page rendered.
+        /// </summary>
+        public Dictionary<string, List<string>>? DuplicateGroups { get; set; }
 
         /// <summary>
         /// Default PDF export options

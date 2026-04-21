@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
@@ -103,6 +104,14 @@ namespace FolderVision.Exporters
                     if (i < roots.Count - 1)
                         Document.Add(new AreaBreak());
                 }
+
+                // ── Duplicate folders page (appended after all roots) ─────────
+                if (_options.IncludeDuplicates
+                    && _options.DuplicateGroups is { Count: > 0 })
+                {
+                    Document.Add(new AreaBreak());
+                    AddDuplicatePage(_options.DuplicateGroups);
+                }
             }
             finally
             {
@@ -164,6 +173,58 @@ namespace FolderVision.Exporters
             var effectiveMax = _options.MaxTreeDepth > 0 ? _options.MaxTreeDepth : int.MaxValue;
             foreach (var child in root.SubFolders.OrderBy(f => f.Name))
                 AddFolderToPdf(child, 1, effectiveMax);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  Duplicate folders page
+        // ─────────────────────────────────────────────────────────────────────
+
+        private void AddDuplicatePage(Dictionary<string, List<string>> groups)
+        {
+            // Page title
+            Document.Add(new Paragraph("Duplicate Folders")
+                .SetFont(BoldFont).SetFontSize(16)
+                .SetFontColor(ColorConstants.DARK_GRAY)
+                .SetMarginBottom(4));
+
+            Document.Add(new Paragraph(
+                    $"{groups.Count} duplicate group{(groups.Count > 1 ? "s" : "")} detected  " +
+                    $"— folders with identical names found across different scan roots")
+                .SetFont(RegularFont).SetFontSize(9)
+                .SetFontColor(ColorConstants.GRAY)
+                .SetMarginBottom(4));
+
+            // Separator line
+            Document.Add(new LineSeparator(new iText.Kernel.Pdf.Canvas.Draw.SolidLine(0.5f))
+                .SetMarginBottom(14));
+
+            // Groups sorted: largest first, then alphabetically
+            foreach (var kvp in groups
+                .OrderByDescending(k => k.Value.Count)
+                .ThenBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                var name  = kvp.Key;
+                var paths = kvp.Value.OrderBy(p => p).ToList();
+                var count = paths.Count;
+                var label = count == 2 ? "duplicate" : count == 3 ? "triple" : $"{count} occurrences";
+
+                // Group header: folder name + occurrence count
+                Document.Add(new Paragraph($"\u25B8  {name}    ({label})")
+                    .SetFont(BoldFont).SetFontSize(11)
+                    .SetFontColor(new DeviceRgb(0x72, 0x3A, 0x3A))
+                    .SetMarginTop(10)
+                    .SetMarginBottom(3));
+
+                // Full path for each occurrence
+                foreach (var path in paths)
+                {
+                    Document.Add(new Paragraph(path)
+                        .SetFont(RegularFont).SetFontSize(9)
+                        .SetFontColor(ColorConstants.DARK_GRAY)
+                        .SetMarginLeft(IndentPerDepth)
+                        .SetMarginBottom(1.5f));
+                }
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────────
