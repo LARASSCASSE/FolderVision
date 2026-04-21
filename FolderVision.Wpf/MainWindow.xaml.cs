@@ -574,9 +574,7 @@ namespace FolderVision.Wpf
                 list.Add(folder);
             }
 
-            // Step 2 — content similarity filter: a folder is kept only if it
-            // shares at least 1 direct child subfolder name with another candidate
-            // (or same FileCount > 0 when both are leaf folders with no subfolders)
+            // Step 2 — content similarity filter + ancestor/descendant exclusion
             foreach (var kvp in byName)
             {
                 var candidates = kvp.Value;
@@ -596,6 +594,44 @@ namespace FolderVision.Wpf
                         .Select(f => f.FullPath).OrderBy(p => p).ToList();
                 }
             }
+
+            // Step 3 — suppress child duplicates whose parent is already flagged.
+            // If a parent folder is a duplicate, all its children are duplicates by
+            // inheritance (copy-paste) — no need to mark each one individually.
+            var allDuplicatePaths = _duplicateGroups.Values
+                .SelectMany(p => p)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var key in _duplicateGroups.Keys.ToList())
+            {
+                var filtered = _duplicateGroups[key]
+                    .Where(path => !HasDuplicateAncestor(path, allDuplicatePaths))
+                    .ToList();
+
+                if (filtered.Count < 2)
+                {
+                    _duplicateGroups.Remove(key);
+                    _duplicateFolderNames.Remove(key);
+                }
+                else
+                {
+                    _duplicateGroups[key] = filtered;
+                }
+            }
+        }
+
+        /// Returns true when any ancestor of <paramref name="path"/> is itself
+        /// present in <paramref name="duplicatePaths"/> — meaning the folder is
+        /// already covered by a higher-level duplicate marker.
+        private static bool HasDuplicateAncestor(string path, HashSet<string> duplicatePaths)
+        {
+            var dir = Path.GetDirectoryName(path);
+            while (!string.IsNullOrEmpty(dir))
+            {
+                if (duplicatePaths.Contains(dir)) return true;
+                dir = Path.GetDirectoryName(dir);
+            }
+            return false;
         }
 
         /// Returns true when pathA is a direct ancestor or descendant of pathB
