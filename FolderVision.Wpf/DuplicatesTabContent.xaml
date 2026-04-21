@@ -1,4 +1,4 @@
-<UserControl x:Class="FolderVision.Wpf.PreviewTabContent"
+<UserControl x:Class="FolderVision.Wpf.DuplicatesTabContent"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FolderVision.Wpf.Models"
@@ -11,10 +11,11 @@
             </ResourceDictionary.MergedDictionaries>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
 
-            <!-- Node label -->
-            <Style x:Key="PreviewNodeLabel" TargetType="TextBlock">
-                <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <!-- Group node (root level) label — red-purple tint -->
+            <Style x:Key="DupGroupLabel" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#FFC07070"/>
                 <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Style.Triggers>
@@ -25,42 +26,52 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- Node inline editor -->
-            <Style x:Key="PreviewNodeEditor" TargetType="TextBox">
-                <Setter Property="Background" Value="#FF2D2D30"/>
-                <Setter Property="Foreground" Value="#FFFFFFFF"/>
-                <Setter Property="BorderBrush" Value="#FF4C7FDB"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="3,1"/>
-                <Setter Property="FontSize" Value="12"/>
+            <!-- Path node (leaf level) label -->
+            <Style x:Key="DupPathLabel" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#FFB0B0B0"/>
+                <Setter Property="FontSize" Value="11"/>
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="Visibility" Value="Collapsed"/>
-                <Setter Property="MinWidth" Value="160"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsIncluded}" Value="False">
+                        <Setter Property="Foreground" Value="#FF505050"/>
+                        <Setter Property="TextDecorations" Value="Strikethrough"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
-            <!-- TreeViewItem: bind IsExpanded to PreviewNode.IsExpanded -->
+            <!-- TreeViewItem -->
             <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
             </Style>
 
-            <!-- HierarchicalDataTemplate -->
+            <!-- HierarchicalDataTemplate — group nodes have red label, path nodes gray -->
             <HierarchicalDataTemplate DataType="{x:Type local:PreviewNode}"
                                       ItemsSource="{Binding Children}">
                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                    <!-- Unchecked = included (empty box) | Checked = excluded (shows ×) -->
                     <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay, Converter={StaticResource InverseBool}}"
                               Style="{StaticResource DarkCheckBox}"
                               Margin="0,0,6,0"/>
-                    <TextBlock Text="{Binding DisplayName}"
-                               Style="{StaticResource PreviewNodeLabel}"
-                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"/>
-                    <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource PreviewNodeEditor}"
-                             LostFocus="NodeEditor_LostFocus"
-                             KeyDown="NodeEditor_KeyDown"/>
+                    <!-- Group node (depth 0) uses red label; path node (depth > 0) uses gray -->
+                    <TextBlock Text="{Binding DisplayName}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource DupPathLabel}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRoot}" Value="True">
+                                        <Setter Property="Foreground" Value="#FFC07070"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize" Value="12"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsIncluded}" Value="False">
+                                        <Setter Property="Foreground" Value="#FF505050"/>
+                                        <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
-                    <!-- Bulk-uncheck button: only when >5 children, only on hover -->
+                    <!-- Bulk-uncheck button (same as PreviewTabContent) -->
                     <Button Content="✕ tout décocher"
                             Margin="8,0,0,0"
                             Padding="7,2"
@@ -89,10 +100,6 @@
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter Property="Background" Value="#FF4A4A4E"/>
                                                     <Setter Property="Foreground" Value="#FFEEEEEE"/>
-                                                    <Setter Property="BorderBrush" Value="#FF777779"/>
-                                                </Trigger>
-                                                <Trigger Property="IsPressed" Value="True">
-                                                    <Setter Property="Background" Value="#FF2A2A2D"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -121,38 +128,31 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header options bar -->
+        <!-- Header bar -->
         <Border Grid.Row="0"
                 Background="#FF2D2D30"
                 BorderBrush="#FF4A4A4D"
                 BorderThickness="0,0,0,1"
                 Padding="10,7">
             <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="IncludeHeaderCheckBox"
-                          Style="{StaticResource DarkCheckBox}"
-                          IsChecked="False"
-                          Margin="0,0,8,0"/>
-                <TextBlock Text="Header PDF"
+                <TextBlock x:Name="GroupCountLabel"
+                           Text="0 duplicate groups"
                            FontSize="12"
+                           FontFamily="Segoe UI"
+                           Foreground="#FFC07070"
+                           FontWeight="SemiBold"
                            VerticalAlignment="Center"
-                           FontFamily="Segoe UI">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="#FFB0B0B0"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=IncludeHeaderCheckBox}" Value="True">
-                                    <Setter Property="Foreground" Value="#FF505050"/>
-                                    <Setter Property="TextDecorations" Value="Strikethrough"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                           Margin="0,0,16,0"/>
+                <TextBlock Text="— uncheck to exclude from export"
+                           FontSize="11"
+                           FontFamily="Segoe UI"
+                           Foreground="#FF707070"
+                           VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
-        <!-- Preview tree -->
-        <TreeView x:Name="PreviewTree"
+        <!-- Duplicates tree -->
+        <TreeView x:Name="DuplicatesTree"
                   Grid.Row="1"
                   Background="#FF252526"
                   BorderThickness="0"

@@ -44,6 +44,41 @@ namespace FolderVision.Exporters
         //  Public API
         // ─────────────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Generates a standalone PDF containing only the duplicate folders report.
+        /// </summary>
+        public async Task ExportDuplicatesAsync(string outputPath)
+        {
+            var outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
+
+            await Task.Run(() =>
+            {
+                using var fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+                var writer = new PdfWriter(fileStream);
+                var pdf    = new PdfDocument(writer);
+                _document  = new Document(pdf);
+
+                _regularFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
+                _boldFont    = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+
+                try
+                {
+                    Document.SetFont(_regularFont);
+                    Document.SetFontSize(_options.FontSize);
+
+                    if (_options.DuplicateGroups is { Count: > 0 })
+                        AddDuplicatePage(_options.DuplicateGroups);
+                    else
+                        Document.Add(new Paragraph("No duplicate groups selected.")
+                            .SetFont(_regularFont).SetFontSize(10)
+                            .SetFontColor(ColorConstants.GRAY));
+                }
+                finally { Document.Close(); }
+            });
+        }
+
         public async Task ExportAsync(ScanResult scanResult, string outputPath = "")
         {
             if (string.IsNullOrEmpty(outputPath))

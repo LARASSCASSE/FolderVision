@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -16,26 +15,16 @@ namespace FolderVision.Wpf
     {
         public PreviewNode? RootNode { get; private set; }
 
-        // Unchecked (empty box) = included in PDF  |  Checked (×) = excluded
-        public bool IncludeHeader     => IncludeHeaderCheckBox.IsChecked     != true;
-        public bool IncludeDuplicates => IncludeDuplicatesCheckBox.IsChecked != true;
-
-        /// <summary>Duplicate groups to include in the PDF (null = none detected).</summary>
-        public Dictionary<string, List<string>>? DuplicateGroups { get; private set; }
+        // Unchecked (empty box) = header included in PDF  |  Checked (×) = header excluded
+        public bool IncludeHeader => IncludeHeaderCheckBox.IsChecked != true;
 
         public PreviewTabContent()
         {
             InitializeComponent();
         }
 
-        public void Initialize(FolderInfo root, int maxDepth,
-            Dictionary<string, List<string>>? duplicateGroups = null)
+        public void Initialize(FolderInfo root, int maxDepth)
         {
-            DuplicateGroups = duplicateGroups;
-            DuplicatesTogglePanel.Visibility = duplicateGroups?.Count > 0
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
             RootNode = BuildNode(root, 0, maxDepth > 0 ? maxDepth : int.MaxValue, isRoot: true);
             PreviewTree.Items.Clear();
             PreviewTree.Items.Add(RootNode);

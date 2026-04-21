@@ -21,6 +21,7 @@ namespace FolderVision.Wpf
         private bool _isScanning;
         // Preview tabs: index 0 in RightTabControl = "Folder Structure" (fixed), 1..N = preview tabs
         private readonly List<TabItem> _previewTabs = new();
+        private TabItem? _duplicatesTab;
 
         // Duplicate folder detection
         private HashSet<string>                    _duplicateFolderNames = new(StringComparer.OrdinalIgnoreCase);
@@ -192,6 +193,8 @@ namespace FolderVision.Wpf
             while (RightTabControl.Items.Count > 1)
                 RightTabControl.Items.RemoveAt(1);
             RightTabControl.SelectedIndex = 0;
+            _previewTabs.Clear();
+            _duplicatesTab = null;
 
             // Clear duplicate-folder state
             _duplicateFolderNames.Clear();
@@ -898,10 +901,16 @@ namespace FolderVision.Wpf
 
         private void RefreshPreviewTabs(ScanResult result)
         {
-            // Remove old preview tabs
+            // Remove old preview tabs + duplicates tab
             foreach (var tab in _previewTabs)
                 RightTabControl.Items.Remove(tab);
             _previewTabs.Clear();
+
+            if (_duplicatesTab != null)
+            {
+                RightTabControl.Items.Remove(_duplicatesTab);
+                _duplicatesTab = null;
+            }
 
             if (PreviewBeforeExportCheckBox.IsChecked != true) return;
 
@@ -910,14 +919,24 @@ namespace FolderVision.Wpf
             foreach (var root in result.RootFolders)
             {
                 var content = new PreviewTabContent();
-                content.Initialize(root, maxDepth,
-                    _duplicateGroups.Count > 0 ? _duplicateGroups : null);
+                content.Initialize(root, maxDepth);
 
                 var tab = new TabItem { Content = content };
                 tab.Header = BuildPreviewTabHeader($"scan {idx++}", tab);
 
                 _previewTabs.Add(tab);
                 RightTabControl.Items.Add(tab);
+            }
+
+            // Duplicates tab — added after scan tabs when duplicates were detected
+            if (_duplicateGroups.Count > 0)
+            {
+                var dupContent = new DuplicatesTabContent();
+                dupContent.Initialize(_duplicateGroups);
+
+                _duplicatesTab = new TabItem { Content = dupContent };
+                _duplicatesTab.Header = BuildPreviewTabHeader("⇄ duplicates", _duplicatesTab);
+                RightTabControl.Items.Add(_duplicatesTab);
             }
 
             Dispatcher.InvokeAsync(UpdateTabNavButtons, System.Windows.Threading.DispatcherPriority.Loaded);
@@ -1185,16 +1204,12 @@ namespace FolderVision.Wpf
                             singleResult.AddScannedPath(p);
                     singleResult.UpdateTotals();
 
-                    // Per-tab options (inherit base options + tab-specific toggles)
+                    // Per-tab options (inherit base options + tab-specific IncludeHeader)
                     var tabOptions = new PdfExportOptions
                     {
                         MaxTreeDepth      = pdfOptions.MaxTreeDepth,
                         IncludeHeader     = previewContent.IncludeHeader,
-                        IncludeFolderTree = pdfOptions.IncludeFolderTree,
-                        IncludeDuplicates = previewContent.IncludeDuplicates,
-                        DuplicateGroups   = previewContent.IncludeDuplicates
-                                            ? previewContent.DuplicateGroups
-                                            : null
+                        IncludeFolderTree = pdfOptions.IncludeFolderTree
                     };
 
                     var dialog = new Microsoft.Win32.SaveFileDialog
@@ -1210,6 +1225,34 @@ namespace FolderVision.Wpf
                     await new PdfExporter(tabOptions).ExportAsync(singleResult, dialog.FileName);
                     exported.Add(dialog.FileName);
                     OpenPdfIfRequested(dialog.FileName);
+                }
+
+                // ── Duplicates tab export ──────────────────────────────────────
+                if (_duplicatesTab?.Content is DuplicatesTabContent dupContent)
+                {
+                    var selectedGroups = dupContent.GetSelectedGroups();
+                    if (selectedGroups.Count > 0)
+                    {
+                        var dupDialog = new Microsoft.Win32.SaveFileDialog
+                        {
+                            Title  = "Save Duplicate Folders Report",
+                            Filter = "PDF Files (*.pdf)|*.pdf",
+                            FileName = "Duplicate_Folders_Report.pdf",
+                            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                        };
+                        if (dupDialog.ShowDialog() == true)
+                        {
+                            SetStatus("Exporting duplicates PDF…");
+                            var dupOptions = new PdfExportOptions
+                            {
+                                IncludeDuplicates = true,
+                                DuplicateGroups   = selectedGroups
+                            };
+                            await new PdfExporter(dupOptions).ExportDuplicatesAsync(dupDialog.FileName);
+                            exported.Add(dupDialog.FileName);
+                            OpenPdfIfRequested(dupDialog.FileName);
+                        }
+                    }
                 }
 
                 if (exported.Count > 0)
