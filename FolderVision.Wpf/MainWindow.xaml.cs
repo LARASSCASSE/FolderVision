@@ -594,6 +594,8 @@ namespace FolderVision.Wpf
                 list.Add((folder, RootOf(folder.FullPath)));
             }
 
+            bool approximate = ApproximateDuplicatesCheckBox.IsChecked == true;
+
             // Step 2 — only keep candidates that have a match in a DIFFERENT root,
             //           plus the usual content-similarity and ancestor/descendant checks.
             foreach (var kvp in byName)
@@ -610,7 +612,7 @@ namespace FolderVision.Wpf
                         !ReferenceEquals(other.Folder, f.Folder)
                         && !other.Root.Equals(f.Root, StringComparison.OrdinalIgnoreCase)
                         && !IsAncestorOrDescendant(f.Folder.FullPath, other.Folder.FullPath)
-                        && HaveSimilarContent(f.Folder, other.Folder)))
+                        && HaveSimilarContent(f.Folder, other.Folder, approximate)))
                     .ToList();
 
                 if (kept.Count < 2) continue;
@@ -688,18 +690,35 @@ namespace FolderVision.Wpf
         ///     → requires ≥80 % of child names to match, weeds out coincidental
         ///       name-sharing across structurally different directories (e.g. the
         ///       many "Adobe" folders spread across Program Files / AppData / ProgramData)
-        private static bool HaveSimilarContent(FolderInfo a, FolderInfo b)
+        private static bool HaveSimilarContent(FolderInfo a, FolderInfo b, bool approximate = false)
         {
-            // ── Level 1: exact direct counts ─────────────────────────────────
-            // A copy-pasted folder has the same number of immediate children.
-            // Different direct subfolder or file counts → definitely not the same.
-            if (a.SubFolders.Count != b.SubFolders.Count) return false;
-            if (a.FileCount        != b.FileCount)        return false;
+            // ── Level 1: direct counts ────────────────────────────────────────
+            // Strict : exact match required.
+            // Approximate : ±1 tolerance (copy with one extra file/folder added).
+            int tolerance = approximate ? 1 : 0;
+            if (Math.Abs(a.SubFolders.Count - b.SubFolders.Count) > tolerance) return false;
+            if (Math.Abs(a.FileCount        - b.FileCount)        > tolerance) return false;
 
             // ── Level 2: recursive totals ─────────────────────────────────────
-            // Same total file+subfolder count across the whole tree.
-            if (a.GetTotalFileCount()      != b.GetTotalFileCount())      return false;
-            if (a.GetTotalSubFolderCount() != b.GetTotalSubFolderCount()) return false;
+            // Strict : exact match.
+            // Approximate : ±10 % of the larger value.
+            int totalFilesA    = a.GetTotalFileCount();
+            int totalFilesB    = b.GetTotalFileCount();
+            int totalFoldersA  = a.GetTotalSubFolderCount();
+            int totalFoldersB  = b.GetTotalSubFolderCount();
+
+            if (approximate)
+            {
+                double fileTol   = Math.Max(totalFilesA,   totalFilesB)   * 0.10;
+                double folderTol = Math.Max(totalFoldersA, totalFoldersB) * 0.10;
+                if (Math.Abs(totalFilesA   - totalFilesB)   > fileTol)   return false;
+                if (Math.Abs(totalFoldersA - totalFoldersB) > folderTol) return false;
+            }
+            else
+            {
+                if (totalFilesA   != totalFilesB)   return false;
+                if (totalFoldersA != totalFoldersB) return false;
+            }
 
             // ── Level 3: direct-child name structure ──────────────────────────
             var childNamesA = a.SubFolders
@@ -713,12 +732,17 @@ namespace FolderVision.Wpf
             if (childNamesA.Count == 0 && childNamesB.Count == 0)
                 return true;
 
-            // ── Level 4: Jaccard ≥ 0.8 on direct child subfolder names ───────
+            if (childNamesA.Count == 0 || childNamesB.Count == 0)
+                return false;
+
+            // ── Level 4: Jaccard on direct child subfolder names ──────────────
+            // Strict ≥ 0.8 · Approximate ≥ 0.6
             int common = childNamesA.Count(n => childNamesB.Contains(n));
             int union  = childNamesA.Count + childNamesB.Count - common;
             double jaccard = (double)common / union;
+            double jaccardThreshold = approximate ? 0.6 : 0.8;
 
-            return jaccard >= 0.8;
+            return jaccard >= jaccardThreshold;
         }
 
         private void NavigateToDuplicate(string folderName, string currentPath)
@@ -1247,8 +1271,17 @@ namespace FolderVision.Wpf
             ThreadsSlider.IsEnabled = !scanning;
             SkipHiddenCheckBox.IsEnabled = !scanning;
             SkipSystemCheckBox.IsEnabled       = !scanning;
-            DetectDuplicatesCheckBox.IsEnabled = !scanning;
-            ReportDepthSlider.IsEnabled        = !scanning;
+            DetectDuplicatesCheckBox.IsEnabled    = !scanning;
+            ApproximateDuplicatesCheckBox.IsEnabled = !scanning
+                && DetectDuplicatesCheckBox.IsChecked == true;
+            ReportDepthSlider.IsEnabled           = !scanning;
+        }
+
+        private void DetectDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            ApproximateDuplicatesCheckBox.IsEnabled = DetectDuplicatesCheckBox.IsChecked == true;
+            if (DetectDuplicatesCheckBox.IsChecked != true)
+                ApproximateDuplicatesCheckBox.IsChecked = false;
         }
 
         private void UpdateProgress(int percent, string message)

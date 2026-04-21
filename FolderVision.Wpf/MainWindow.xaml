@@ -284,8 +284,15 @@
                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
                             <CheckBox x:Name="DetectDuplicatesCheckBox"
                                       Content="Detect duplicate folders"
-                                      Margin="0,0,0,0"
-                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                                      Margin="0,0,0,4"
+                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                      Checked="DetectDuplicatesCheckBox_Changed"
+                                      Unchecked="DetectDuplicatesCheckBox_Changed"/>
+                            <CheckBox x:Name="ApproximateDuplicatesCheckBox"
+                                      Content="Approximate (±1 folder/file, Jaccard ≥ 0.6)"
+                                      Margin="16,0,0,0"
+                                      IsEnabled="False"
+                                      Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
                         </StackPanel>
                     </Border>
 
