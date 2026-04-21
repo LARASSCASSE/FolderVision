@@ -1281,7 +1281,7 @@ namespace FolderVision.Wpf
             SkipSystemCheckBox.IsEnabled       = !scanning;
             DetectDuplicatesCheckBox.IsEnabled      = !scanning;
             ApproximateDuplicatesCheckBox.IsEnabled = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
-            SimilaritySliderPanel.IsEnabled         = !scanning && ApproximateDuplicatesCheckBox.IsChecked == true;
+            SimilaritySliderPanel.IsEnabled         = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
             ReportDepthSlider.IsEnabled           = !scanning;
         }
 
@@ -1289,16 +1289,14 @@ namespace FolderVision.Wpf
         {
             bool on = DetectDuplicatesCheckBox.IsChecked == true;
             ApproximateDuplicatesCheckBox.IsEnabled = on;
+            SimilaritySliderPanel.IsEnabled = on;
             if (!on)
-            {
                 ApproximateDuplicatesCheckBox.IsChecked = false;
-                SimilaritySliderPanel.IsEnabled = false;
-            }
         }
 
         private void ApproximateDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)
         {
-            SimilaritySliderPanel.IsEnabled = ApproximateDuplicatesCheckBox.IsChecked == true;
+            // slider remains enabled as long as detect duplicate is on
         }
 
         private void SimilaritySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
