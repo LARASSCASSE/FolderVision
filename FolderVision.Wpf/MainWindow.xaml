@@ -288,11 +288,28 @@
                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
                                       Checked="DetectDuplicatesCheckBox_Changed"
                                       Unchecked="DetectDuplicatesCheckBox_Changed"/>
-                            <CheckBox x:Name="ApproximateDuplicatesCheckBox"
-                                      Content="Approximate (±1 folder/file, Jaccard ≥ 0.6)"
-                                      Margin="16,0,0,0"
-                                      IsEnabled="False"
-                                      Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
+                            <StackPanel Margin="16,0,0,0">
+                                <CheckBox x:Name="ApproximateDuplicatesCheckBox"
+                                          Content="Approximate matching"
+                                          IsEnabled="False"
+                                          Foreground="{StaticResource TextMutedBrush}" FontSize="11"
+                                          Checked="ApproximateDuplicatesCheckBox_Changed"
+                                          Unchecked="ApproximateDuplicatesCheckBox_Changed"/>
+                                <Grid x:Name="SimilaritySliderPanel" Margin="0,4,0,0" IsEnabled="False">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="38"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="SimilaritySlider"
+                                            Minimum="10" Maximum="100" Value="80"
+                                            TickFrequency="10" IsSnapToTickEnabled="True"
+                                            TickPlacement="BottomRight"
+                                            ValueChanged="SimilaritySlider_ValueChanged"/>
+                                    <TextBlock x:Name="SimilarityLabel" Grid.Column="1"
+                                               Text="80%" TextAlignment="Right" VerticalAlignment="Center"
+                                               FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                </Grid>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

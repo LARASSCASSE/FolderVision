@@ -262,6 +262,7 @@ namespace FolderVision.Core
                             continue;
 
                         fileCount++;
+                        folderInfo.Files.Add((file.Name, file.Length));
                     }
                     catch (Exception ex)
                     {

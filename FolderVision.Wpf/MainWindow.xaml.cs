@@ -595,6 +595,7 @@ namespace FolderVision.Wpf
             }
 
             bool approximate = ApproximateDuplicatesCheckBox.IsChecked == true;
+            double threshold = approximate ? (SimilaritySlider?.Value / 100.0 ?? 0.80) : 1.0;
 
             // Step 2 — only keep candidates that have a match in a DIFFERENT root,
             //           plus the usual content-similarity and ancestor/descendant checks.
@@ -612,7 +613,7 @@ namespace FolderVision.Wpf
                         !ReferenceEquals(other.Folder, f.Folder)
                         && !other.Root.Equals(f.Root, StringComparison.OrdinalIgnoreCase)
                         && !IsAncestorOrDescendant(f.Folder.FullPath, other.Folder.FullPath)
-                        && HaveSimilarContent(f.Folder, other.Folder, approximate)))
+                        && HaveSimilarContent(f.Folder, other.Folder, approximate, threshold)))
                     .ToList();
 
                 if (kept.Count < 2) continue;
@@ -686,63 +687,70 @@ namespace FolderVision.Wpf
         /// Criteria:
         ///   - Both leaf folders (no subfolders): exact same non-zero FileCount
         ///   - Folders with subfolders: Jaccard similarity of direct child subfolder
-        ///     names ≥ 0.8  AND  same direct FileCount
-        ///     → requires ≥80 % of child names to match, weeds out coincidental
-        ///       name-sharing across structurally different directories (e.g. the
-        ///       many "Adobe" folders spread across Program Files / AppData / ProgramData)
-        private static bool HaveSimilarContent(FolderInfo a, FolderInfo b, bool approximate = false)
+        ///     Strict mode  : all counts must be identical + Jaccard on subfolder names ≥ 0.8.
+        ///     Approximate  : uses 'threshold' (from the UI slider, 0.10–1.00) for all comparisons:
+        ///                    recursive-total similarity, direct-file overlap (name+size), and Jaccard.
+        private static bool HaveSimilarContent(FolderInfo a, FolderInfo b, bool approximate, double threshold = 1.0)
         {
-            // ── Level 1: direct counts ────────────────────────────────────────
-            // Strict : exact match required.
-            // Approximate : ±1 tolerance (copy with one extra file/folder added).
-            int tolerance = approximate ? 1 : 0;
-            if (Math.Abs(a.SubFolders.Count - b.SubFolders.Count) > tolerance) return false;
-            if (Math.Abs(a.FileCount        - b.FileCount)        > tolerance) return false;
-
-            // ── Level 2: recursive totals ─────────────────────────────────────
-            // Strict : exact match.
-            // Approximate : ±10 % of the larger value.
-            int totalFilesA    = a.GetTotalFileCount();
-            int totalFilesB    = b.GetTotalFileCount();
-            int totalFoldersA  = a.GetTotalSubFolderCount();
-            int totalFoldersB  = b.GetTotalSubFolderCount();
-
-            if (approximate)
+            if (!approximate)
             {
-                double fileTol   = Math.Max(totalFilesA,   totalFilesB)   * 0.10;
-                double folderTol = Math.Max(totalFoldersA, totalFoldersB) * 0.10;
-                if (Math.Abs(totalFilesA   - totalFilesB)   > fileTol)   return false;
-                if (Math.Abs(totalFoldersA - totalFoldersB) > folderTol) return false;
+                // ── Strict: every count must match exactly ────────────────────
+                if (a.SubFolders.Count     != b.SubFolders.Count)     return false;
+                if (a.FileCount            != b.FileCount)            return false;
+                if (a.GetTotalFileCount()      != b.GetTotalFileCount())      return false;
+                if (a.GetTotalSubFolderCount() != b.GetTotalSubFolderCount()) return false;
             }
             else
             {
-                if (totalFilesA   != totalFilesB)   return false;
-                if (totalFoldersA != totalFoldersB) return false;
+                // ── Approximate: recursive totals must be within (1-threshold) of each other ──
+                static double CountSim(int x, int y) =>
+                    (x == 0 && y == 0) ? 1.0 : 1.0 - (double)Math.Abs(x - y) / Math.Max(x, y);
+
+                if (CountSim(a.GetTotalFileCount(),      b.GetTotalFileCount())      < threshold) return false;
+                if (CountSim(a.GetTotalSubFolderCount(), b.GetTotalSubFolderCount()) < threshold) return false;
             }
 
-            // ── Level 3: direct-child name structure ──────────────────────────
-            var childNamesA = a.SubFolders
-                .Select(s => s.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var childNamesB = b.SubFolders
-                .Select(s => s.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // ── File-level similarity: direct child files by (name, size) ─────
+            double fileSim = FileOverlapSimilarity(a.Files, b.Files);
+            if (fileSim < threshold) return false;
 
-            // Leaf folders: all numeric checks already passed — valid duplicate
-            if (childNamesA.Count == 0 && childNamesB.Count == 0)
-                return true;
+            // ── Jaccard on direct child subfolder names ───────────────────────
+            var namesA = a.SubFolders.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var namesB = b.SubFolders.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            if (childNamesA.Count == 0 || childNamesB.Count == 0)
-                return false;
+            if (namesA.Count == 0 && namesB.Count == 0) return true;              // leaf folders — file check already passed
+            if (namesA.Count == 0 || namesB.Count == 0) return fileSim >= threshold; // one side has only files
 
-            // ── Level 4: Jaccard on direct child subfolder names ──────────────
-            // Strict ≥ 0.8 · Approximate ≥ 0.6
-            int common = childNamesA.Count(n => childNamesB.Contains(n));
-            int union  = childNamesA.Count + childNamesB.Count - common;
+            int common = namesA.Count(n => namesB.Contains(n));
+            int union  = namesA.Count + namesB.Count - common;
             double jaccard = (double)common / union;
-            double jaccardThreshold = approximate ? 0.6 : 0.8;
+            double jaccardMin = approximate ? threshold : 0.8;
+            return jaccard >= jaccardMin;
+        }
 
-            return jaccard >= jaccardThreshold;
+        /// <summary>
+        /// Fraction of files in A that have an exact (name, size) match in B,
+        /// normalised by the larger of the two counts.
+        /// Returns 1.0 when both folders are empty of files.
+        /// </summary>
+        private static double FileOverlapSimilarity(
+            List<(string Name, long Size)> filesA,
+            List<(string Name, long Size)> filesB)
+        {
+            if (filesA.Count == 0 && filesB.Count == 0) return 1.0;
+            if (filesA.Count == 0 || filesB.Count == 0) return 0.0;
+
+            // Build a name→sizes lookup on B
+            var lookupB = new Dictionary<string, HashSet<long>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (name, size) in filesB)
+            {
+                if (!lookupB.TryGetValue(name, out var sizes))
+                    lookupB[name] = sizes = new HashSet<long>();
+                sizes.Add(size);
+            }
+
+            int matches = filesA.Count(f => lookupB.TryGetValue(f.Name, out var sz) && sz.Contains(f.Size));
+            return (double)matches / Math.Max(filesA.Count, filesB.Count);
         }
 
         private void NavigateToDuplicate(string folderName, string currentPath)
@@ -1271,17 +1279,32 @@ namespace FolderVision.Wpf
             ThreadsSlider.IsEnabled = !scanning;
             SkipHiddenCheckBox.IsEnabled = !scanning;
             SkipSystemCheckBox.IsEnabled       = !scanning;
-            DetectDuplicatesCheckBox.IsEnabled    = !scanning;
-            ApproximateDuplicatesCheckBox.IsEnabled = !scanning
-                && DetectDuplicatesCheckBox.IsChecked == true;
+            DetectDuplicatesCheckBox.IsEnabled      = !scanning;
+            ApproximateDuplicatesCheckBox.IsEnabled = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
+            SimilaritySliderPanel.IsEnabled         = !scanning && ApproximateDuplicatesCheckBox.IsChecked == true;
             ReportDepthSlider.IsEnabled           = !scanning;
         }
 
         private void DetectDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)
         {
-            ApproximateDuplicatesCheckBox.IsEnabled = DetectDuplicatesCheckBox.IsChecked == true;
-            if (DetectDuplicatesCheckBox.IsChecked != true)
+            bool on = DetectDuplicatesCheckBox.IsChecked == true;
+            ApproximateDuplicatesCheckBox.IsEnabled = on;
+            if (!on)
+            {
                 ApproximateDuplicatesCheckBox.IsChecked = false;
+                SimilaritySliderPanel.IsEnabled = false;
+            }
+        }
+
+        private void ApproximateDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            SimilaritySliderPanel.IsEnabled = ApproximateDuplicatesCheckBox.IsChecked == true;
+        }
+
+        private void SimilaritySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (SimilarityLabel != null)
+                SimilarityLabel.Text = $"{(int)e.NewValue}%";
         }
 
         private void UpdateProgress(int percent, string message)

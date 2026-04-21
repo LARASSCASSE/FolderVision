@@ -27,6 +27,9 @@ namespace FolderVision.Models
         public List<FolderInfo> SubFolders { get; set; }
         public DateTime LastModified { get; set; }
 
+        /// <summary>Direct child files: (Name, Size in bytes) — used for duplicate similarity comparison.</summary>
+        public List<(string Name, long Size)> Files { get; set; } = new();
+
         public void AddSubFolder(FolderInfo subFolder)
         {
             lock (_lockObject)
