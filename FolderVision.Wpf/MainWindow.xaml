@@ -121,10 +121,10 @@
                     BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <!-- SCAN PATHS — plus grande que les autres -->
-                        <RowDefinition Height="1.6*"/>
-                        <!-- SCAN SETTINGS -->
-                        <RowDefinition Height="*"/>
+                        <!-- SCAN PATHS -->
+                        <RowDefinition Height="1.3*"/>
+                        <!-- SCAN SETTINGS — extra height for similarity slider -->
+                        <RowDefinition Height="1.5*"/>
                         <!-- EXPORT SETTINGS -->
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
