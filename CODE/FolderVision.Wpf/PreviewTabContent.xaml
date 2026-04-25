@@ -11,7 +11,7 @@
             </ResourceDictionary.MergedDictionaries>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
 
-            <!-- Node label -->
+            <!-- Node label style -->
             <Style x:Key="PreviewNodeLabel" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="#FFFFFFFF"/>
                 <Setter Property="FontSize" Value="12"/>
@@ -25,16 +25,14 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- TreeViewItem: bind IsExpanded to PreviewNode.IsExpanded -->
-            <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
-                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-            </Style>
-
-            <!-- HierarchicalDataTemplate -->
-            <HierarchicalDataTemplate DataType="{x:Type local:PreviewNode}"
-                                      ItemsSource="{Binding Children}">
+            <!--
+                Keyed header DataTemplate — applied explicitly via TreeViewItem.HeaderTemplate in code.
+                NOT auto-applied by DataType so WPF does NOT auto-generate child containers.
+                DataContext inside this template = TreeViewItem.Header = the PreviewNode.
+            -->
+            <DataTemplate x:Key="PreviewNodeHeaderTemplate">
                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                    <!-- Unchecked = included (empty box) | Checked = excluded (shows ×) -->
+                    <!-- Unchecked = included | Checked (×) = excluded -->
                     <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay, Converter={StaticResource InverseBool}}"
                               Style="{StaticResource DarkCheckBox}"
                               Margin="0,0,6,0"/>
@@ -42,8 +40,7 @@
                                Style="{StaticResource PreviewNodeLabel}"
                                MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"
                                ToolTip="Double-clic : cocher/décocher tous les sous-dossiers"/>
-
-                    <!-- Bulk-uncheck button: only when >5 children, only on hover -->
+                    <!-- Bulk-uncheck button: visible on hover when ≥5 excluded children -->
                     <Button Content="✕ tout décocher"
                             Margin="8,0,0,0"
                             Padding="7,2"
@@ -94,7 +91,7 @@
                         </Button.Style>
                     </Button>
                 </StackPanel>
-            </HierarchicalDataTemplate>
+            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -142,13 +139,12 @@
                   Margin="4"
                   Visibility="Collapsed"/>
 
-        <!-- Loading overlay -->
+        <!-- Loading overlay — shown while BuildNode runs in background -->
         <Grid x:Name="LoadingOverlay"
               Grid.Row="1"
               Background="#FF252526"
               Visibility="Visible">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <!-- Spinning arc -->
                 <Ellipse Width="44" Height="44"
                          Stroke="#FF4C7FDB"
                          StrokeThickness="4"
