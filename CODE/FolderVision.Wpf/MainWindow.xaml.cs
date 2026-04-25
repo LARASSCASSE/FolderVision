@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using FolderVision.Core;
 using FolderVision.Core.Logging;
@@ -52,9 +54,130 @@ namespace FolderVision.Wpf
         // Pause state
         private bool _isPaused;
 
+        // ── Drive-arrival detection (WM_DEVICECHANGE) ──────────────────────────
+        private string? _pendingDrivePath;
+        private System.Windows.Threading.DispatcherTimer? _driveNotificationTimer;
+
+        // ── Folder-rename watchers ─────────────────────────────────────────────
+        private readonly Dictionary<string, FileSystemWatcher> _pathWatchers
+            = new(StringComparer.OrdinalIgnoreCase);
+
+        // WinAPI constants
+        private const int WM_DEVICECHANGE   = 0x0219;
+        private const int DBT_DEVICEARRIVAL = 0x8000;
+        private const int DBT_DEVTYP_VOLUME = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DEV_BROADCAST_HDR   { public int Size, DeviceType, Reserved; }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DEV_BROADCAST_VOLUME { public int Size, DeviceType, Reserved; public uint UnitMask; public short Flags; }
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void ShowDriveNotification(string drivePath)
+        {
+            // Don't show if already in list
+            if (PathsListBox.Items.Cast<string>()
+                .Any(p => p.Equals(drivePath, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            _pendingDrivePath = drivePath;
+            DriveNotificationText.Text = $"💾  {drivePath} connected";
+            DriveNotificationBanner.Visibility = Visibility.Visible;
+
+            // Auto-dismiss after 12 seconds
+            _driveNotificationTimer?.Stop();
+            _driveNotificationTimer = new System.Windows.Threading.DispatcherTimer
+                { Interval = TimeSpan.FromSeconds(12) };
+            _driveNotificationTimer.Tick += (s, _) =>
+            {
+                _driveNotificationTimer!.Stop();
+                DismissDriveNotification();
+            };
+            _driveNotificationTimer.Start();
+        }
+
+        private void DismissDriveNotification()
+        {
+            DriveNotificationBanner.Visibility = Visibility.Collapsed;
+            _pendingDrivePath = null;
+        }
+
+        private void DriveNotificationAdd_Click(object sender, RoutedEventArgs e)
+        {
+            if (_pendingDrivePath != null)
+                AddFolderPaths(new[] { _pendingDrivePath });
+            DismissDriveNotification();
+        }
+
+        private void DriveNotificationDismiss_Click(object sender, RoutedEventArgs e)
+            => DismissDriveNotification();
+
+        // ── FileSystemWatcher: folder rename ───────────────────────────────────
+
+        private void WatchPath(string path)
+        {
+            if (_pathWatchers.ContainsKey(path)) return;
+            // Root drives (D:\) have no watchable parent
+            string? parent = Path.GetDirectoryName(path.TrimEnd('\\', '/'));
+            if (string.IsNullOrEmpty(parent) || !Directory.Exists(parent)) return;
+
+            try
+            {
+                var w = new FileSystemWatcher(parent)
+                {
+                    NotifyFilter = NotifyFilters.DirectoryName,
+                    EnableRaisingEvents = true
+                };
+                w.Renamed += OnWatchedPathRenamed;
+                w.Error   += (_, _2) => Dispatcher.InvokeAsync(() => UnwatchPath(path));
+                _pathWatchers[path] = w;
+            }
+            catch { /* unreadable parent — skip silently */ }
+        }
+
+        private void UnwatchPath(string path)
+        {
+            if (!_pathWatchers.TryGetValue(path, out var w)) return;
+            w.EnableRaisingEvents = false;
+            try { w.Dispose(); } catch { }
+            _pathWatchers.Remove(path);
+        }
+
+        private void DisposeAllWatchers()
+        {
+            foreach (var w in _pathWatchers.Values)
+            {
+                w.EnableRaisingEvents = false;
+                try { w.Dispose(); } catch { }
+            }
+            _pathWatchers.Clear();
+        }
+
+        private void OnWatchedPathRenamed(object sender, RenamedEventArgs e)
+        {
+            // Find which of our watched paths matched the rename
+            string? matched = _pathWatchers.Keys.FirstOrDefault(
+                p => string.Equals(p, e.OldFullPath, StringComparison.OrdinalIgnoreCase));
+            if (matched == null) return;
+
+            Dispatcher.InvokeAsync(() =>
+            {
+                for (int i = 0; i < PathsListBox.Items.Count; i++)
+                {
+                    if (!string.Equals(PathsListBox.Items[i]?.ToString(), matched,
+                        StringComparison.OrdinalIgnoreCase)) continue;
+
+                    PathsListBox.Items[i] = e.FullPath;
+                    UnwatchPath(matched);
+                    WatchPath(e.FullPath);
+                    SetStatus($"Path renamed: {Path.GetFileName(e.OldName)} → {Path.GetFileName(e.FullPath)}");
+                    break;
+                }
+            });
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -75,6 +198,7 @@ namespace FolderVision.Wpf
             base.OnClosed(e);
             if (_scanEngine != null && _progressHandler != null)
                 _scanEngine.ProgressChanged -= _progressHandler;
+            DisposeAllWatchers();
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -110,6 +234,7 @@ namespace FolderVision.Wpf
                 if (!existing.Add(path)) continue;  // Add returns false if already present
 
                 PathsListBox.Items.Add(path);
+                WatchPath(path);
                 added++;
             }
             if (added > 0) UpdateStartButtonState();
@@ -171,6 +296,8 @@ namespace FolderVision.Wpf
             }
 
             // Reset everything to initial state
+            DisposeAllWatchers();
+            DismissDriveNotification();
             PathsListBox.Items.Clear();
             _lastScanResult = null;
             _isScanning = false;
@@ -208,6 +335,7 @@ namespace FolderVision.Wpf
         {
             if (sender is System.Windows.Controls.Button btn && btn.DataContext is string path)
             {
+                UnwatchPath(path);
                 PathsListBox.Items.Remove(path);
                 UpdateStartButtonState();
                 SetStatus("Path removed.");
@@ -246,6 +374,28 @@ namespace FolderVision.Wpf
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            // ── Drive arrival ───────────────────────────────────────────────────
+            if (msg == WM_DEVICECHANGE
+                && wParam.ToInt32() == DBT_DEVICEARRIVAL
+                && lParam != IntPtr.Zero)
+            {
+                var hdr = Marshal.PtrToStructure<DEV_BROADCAST_HDR>(lParam);
+                if (hdr.DeviceType == DBT_DEVTYP_VOLUME)
+                {
+                    var vol = Marshal.PtrToStructure<DEV_BROADCAST_VOLUME>(lParam);
+                    for (int i = 0; i < 26; i++)
+                    {
+                        if ((vol.UnitMask & (1u << i)) != 0)
+                        {
+                            string drive = $"{(char)('A' + i)}:\\";
+                            Dispatcher.InvokeAsync(() => ShowDriveNotification(drive));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // ── Horizontal mouse-wheel (trackpad) ───────────────────────────────
             if (msg == WM_MOUSEHWHEEL)
             {
                 // Positive delta = scroll right, negative = scroll left
