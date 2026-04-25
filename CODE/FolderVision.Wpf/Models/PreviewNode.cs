@@ -89,6 +89,17 @@ namespace FolderVision.Wpf.Models
             }
         }
 
+        /// <summary>
+        /// Toggles IsIncluded without cascading to children —
+        /// used by double-click inversion so each child is inverted independently.
+        /// </summary>
+        internal void InvertIncluded()
+        {
+            _isIncluded = !_isIncluded;
+            OnPropertyChanged(nameof(IsIncluded));
+            OnPropertyChanged(nameof(ShowUncheckButton));
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

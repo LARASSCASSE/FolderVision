@@ -25,20 +25,6 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- Node inline editor -->
-            <Style x:Key="PreviewNodeEditor" TargetType="TextBox">
-                <Setter Property="Background" Value="#FF2D2D30"/>
-                <Setter Property="Foreground" Value="#FFFFFFFF"/>
-                <Setter Property="BorderBrush" Value="#FF4C7FDB"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="3,1"/>
-                <Setter Property="FontSize" Value="12"/>
-                <Setter Property="FontFamily" Value="Segoe UI"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="Visibility" Value="Collapsed"/>
-                <Setter Property="MinWidth" Value="160"/>
-            </Style>
-
             <!-- TreeViewItem: bind IsExpanded to PreviewNode.IsExpanded -->
             <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
@@ -54,11 +40,8 @@
                               Margin="0,0,6,0"/>
                     <TextBlock Text="{Binding DisplayName}"
                                Style="{StaticResource PreviewNodeLabel}"
-                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"/>
-                    <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource PreviewNodeEditor}"
-                             LostFocus="NodeEditor_LostFocus"
-                             KeyDown="NodeEditor_KeyDown"/>
+                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"
+                               ToolTip="Double-clic : cocher/décocher tous les sous-dossiers"/>
 
                     <!-- Bulk-uncheck button: only when >5 children, only on hover -->
                     <Button Content="✕ tout décocher"
@@ -151,11 +134,49 @@
             </StackPanel>
         </Border>
 
-        <!-- Preview tree -->
+        <!-- Preview tree (hidden while loading) -->
         <TreeView x:Name="PreviewTree"
                   Grid.Row="1"
                   Background="#FF252526"
                   BorderThickness="0"
-                  Margin="4"/>
+                  Margin="4"
+                  Visibility="Collapsed"/>
+
+        <!-- Loading overlay -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.Row="1"
+              Background="#FF252526"
+              Visibility="Visible">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <!-- Spinning arc -->
+                <Ellipse Width="44" Height="44"
+                         Stroke="#FF4C7FDB"
+                         StrokeThickness="4"
+                         StrokeDashArray="15 16"
+                         RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="SpinnerRotate" Angle="0"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever">
+                                    <DoubleAnimation Storyboard.TargetName="SpinnerRotate"
+                                                     Storyboard.TargetProperty="Angle"
+                                                     From="0" To="360"
+                                                     Duration="0:0:0.75"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+                <TextBlock Text="Chargement..."
+                           Foreground="#FF707070"
+                           FontSize="12"
+                           FontFamily="Segoe UI"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,0"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

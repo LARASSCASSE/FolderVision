@@ -73,6 +73,29 @@ namespace FolderVision.Wpf
         private static int CountNodes(PreviewNode node)
             => 1 + node.Children.Sum(c => CountNodes(c));
 
+        // ── Double-click checkbox : propagate to all descendants ──────────────
+
+        private void CheckBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.CheckBox cb && cb.DataContext is PreviewNode node)
+            {
+                e.Handled = true;
+                InvertDescendants(node);
+                // If parent is checked but some children are now unchecked → uncheck parent too
+                if (node.IsIncluded && node.Children.Any(c => !c.IsIncluded))
+                    node.InvertIncluded();
+            }
+        }
+
+        private static void InvertDescendants(PreviewNode node)
+        {
+            foreach (var child in node.Children)
+            {
+                child.InvertIncluded();
+                InvertDescendants(child);
+            }
+        }
+
         // ── Inline editing ────────────────────────────────────────────────────
 
         private void NodeLabel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -80,16 +103,11 @@ namespace FolderVision.Wpf
             if (e.ClickCount < 2) return;
             e.Handled = true;
 
-            if (sender is WpfTextBlock label &&
-                label.Parent is WpfStackPanel panel)
+            if (sender is WpfTextBlock label && label.DataContext is PreviewNode node)
             {
-                var editor = panel.Children.OfType<WpfTextBox>().FirstOrDefault();
-                if (editor == null) return;
-
-                label.Visibility = Visibility.Collapsed;
-                editor.Visibility = Visibility.Visible;
-                editor.SelectAll();
-                editor.Focus();
+                InvertDescendants(node);
+                if (node.IsIncluded && node.Children.Any(c => !c.IsIncluded))
+                    node.InvertIncluded();
             }
         }
 

@@ -75,9 +75,11 @@
                                       DataType="{x:Type local:PreviewNode}"
                                       ItemsSource="{Binding Children}">
                 <StackPanel Orientation="Horizontal" Margin="0,1">
-                    <!-- Include checkbox -->
+                    <!-- Include checkbox — double-click propagates state to all children -->
                     <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay}"
-                              Style="{StaticResource PreviewCheckBox}"/>
+                              Style="{StaticResource PreviewCheckBox}"
+                              MouseDoubleClick="CheckBox_MouseDoubleClick"
+                              ToolTip="Double-clic : cocher/décocher tous les sous-dossiers"/>
 
                     <!-- TextBlock (read mode) — hidden while editing -->
                     <TextBlock x:Name="NodeLabel"

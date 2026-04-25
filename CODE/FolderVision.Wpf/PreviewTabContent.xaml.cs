@@ -1,13 +1,12 @@
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using FolderVision.Models;
 using FolderVision.Wpf.Models;
 using WpfUserControl = System.Windows.Controls.UserControl;
-using WpfTextBox = System.Windows.Controls.TextBox;
 using WpfTextBlock = System.Windows.Controls.TextBlock;
-using WpfStackPanel = System.Windows.Controls.StackPanel;
 
 namespace FolderVision.Wpf
 {
@@ -23,12 +22,19 @@ namespace FolderVision.Wpf
             InitializeComponent();
         }
 
-        public void Initialize(FolderInfo root, int maxDepth)
+        public async void Initialize(FolderInfo root, int maxDepth)
         {
-            RootNode = BuildNode(root, 0, maxDepth > 0 ? maxDepth : int.MaxValue, isRoot: true);
+            // Show spinner while building the node tree on a background thread
+            LoadingOverlay.Visibility = Visibility.Visible;
+            PreviewTree.Visibility    = Visibility.Collapsed;
             PreviewTree.Items.Clear();
+
+            int depth = maxDepth > 0 ? maxDepth : int.MaxValue;
+            RootNode = await Task.Run(() => BuildNode(root, 0, depth, isRoot: true));
+
             PreviewTree.Items.Add(RootNode);
-            if (PreviewTree.Items[0] is System.Windows.Controls.TreeViewItem tvi) tvi.IsExpanded = true;
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+            PreviewTree.Visibility    = Visibility.Visible;
         }
 
         private static PreviewNode BuildNode(FolderInfo folder, int depth, int maxDepth, bool isRoot = false)
@@ -96,45 +102,30 @@ namespace FolderVision.Wpf
             }
         }
 
-        // ── Inline editing ─────────────────────────────────────────────────────
+        // ── Double-click: invert all descendants ───────────────────────────────
 
         private void NodeLabel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount < 2) return;
             e.Handled = true;
 
-            if (sender is WpfTextBlock label && label.Parent is WpfStackPanel panel)
+            if (sender is WpfTextBlock label && label.DataContext is PreviewNode node)
             {
-                var editor = panel.Children.OfType<WpfTextBox>().FirstOrDefault();
-                if (editor == null) return;
-                label.Visibility = Visibility.Collapsed;
-                editor.Visibility = Visibility.Visible;
-                editor.SelectAll();
-                editor.Focus();
+                InvertDescendants(node);
+                // If parent is still checked but some children are now unchecked → uncheck parent too
+                if (node.IsIncluded && node.Children.Any(c => !c.IsIncluded))
+                    node.InvertIncluded();
             }
         }
 
-        private void NodeEditor_LostFocus(object sender, RoutedEventArgs e)
-            => CommitEdit(sender as WpfTextBox);
-
-        private void NodeEditor_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private static void InvertDescendants(PreviewNode node)
         {
-            if (e.Key is Key.Enter or Key.Escape)
+            foreach (var child in node.Children)
             {
-                if (e.Key == Key.Escape && sender is WpfTextBox tb && tb.DataContext is PreviewNode node)
-                    tb.Text = node.DisplayName;
-                CommitEdit(sender as WpfTextBox);
-                e.Handled = true;
+                child.InvertIncluded();
+                InvertDescendants(child);
             }
         }
 
-        private static void CommitEdit(WpfTextBox? editor)
-        {
-            if (editor == null) return;
-            editor.Visibility = Visibility.Collapsed;
-            var panel = editor.Parent as WpfStackPanel;
-            var label = panel?.Children.OfType<WpfTextBlock>().FirstOrDefault();
-            if (label != null) label.Visibility = Visibility.Visible;
-        }
     }
 }
