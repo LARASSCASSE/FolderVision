@@ -73,6 +73,8 @@ namespace FolderVision.Wpf
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+            _progressTimer?.Stop();
+            _scanEngine?.CancelScan();
             if (_scanEngine != null && _progressHandler != null)
                 _scanEngine.ProgressChanged -= _progressHandler;
         }
