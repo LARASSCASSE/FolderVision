@@ -33,6 +33,7 @@ namespace FolderVision.Wpf
             RootNode = await Task.Run(() => BuildNode(root, 0, depth, isRoot: true));
 
             PreviewTree.Items.Add(RootNode);
+            RootNode.IsExpanded = true;   // expand only the root; children render on demand
             LoadingOverlay.Visibility = Visibility.Collapsed;
             PreviewTree.Visibility    = Visibility.Visible;
         }

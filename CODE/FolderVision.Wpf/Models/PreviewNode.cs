@@ -10,7 +10,7 @@ namespace FolderVision.Wpf.Models
     public class PreviewNode : INotifyPropertyChanged
     {
         private bool _isIncluded = true;
-        private bool _isExpanded = true;
+        private bool _isExpanded = false;
         private string _displayName = string.Empty;
         private ObservableCollection<PreviewNode> _children = new();
 
