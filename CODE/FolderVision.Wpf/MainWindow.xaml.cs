@@ -1332,6 +1332,17 @@ namespace FolderVision.Wpf
             ApproximateDuplicatesCheckBox.IsEnabled = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
             SimilaritySliderPanel.IsEnabled         = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
             ReportDepthSlider.IsEnabled           = !scanning;
+            GearButton.IsEnabled                  = !scanning;
+        }
+
+        private void GearButton_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsPanel.Visibility = Visibility.Visible;
+        }
+
+        private void SettingsBack_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsPanel.Visibility = Visibility.Collapsed;
         }
 
         private void DetectDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)

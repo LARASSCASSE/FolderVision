@@ -250,11 +250,25 @@
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="0,1,0,0">
                         <StackPanel Margin="12,14,12,12" VerticalAlignment="Top">
-                            <TextBlock Text="SCAN SETTINGS"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Margin="0,0,0,10"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="SCAN SETTINGS"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="GearButton"
+                                        Grid.Column="1"
+                                        Content="&#xE713;"
+                                        Style="{StaticResource GearButtonStyle}"
+                                        ToolTip="Paramètres"
+                                        Click="GearButton_Click"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -364,6 +378,50 @@
                                       Foreground="{StaticResource TextSecondaryBrush}"
                                       Margin="0,0,0,0"/>
                         </StackPanel>
+                    </Border>
+
+                    <!-- ── SETTINGS OVERLAY (covers all 3 rows when visible) ── -->
+                    <Border x:Name="SettingsPanel"
+                            Grid.Row="0" Grid.RowSpan="3"
+                            Background="{StaticResource BackgroundMediumBrush}"
+                            Panel.ZIndex="10"
+                            Visibility="Collapsed">
+                        <DockPanel>
+                            <!-- Header with back arrow -->
+                            <Border DockPanel.Dock="Top"
+                                    Background="{StaticResource BackgroundLightBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="12,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="SettingsBackButton"
+                                            Grid.Column="0"
+                                            Content="&#xE72B;"
+                                            Style="{StaticResource GearButtonStyle}"
+                                            ToolTip="Retour"
+                                            Click="SettingsBack_Click"
+                                            Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="PARAMÈTRES"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <!-- Placeholder content -->
+                            <TextBlock Text="Paramètres à venir..."
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="12"
+                                       FontFamily="Segoe UI"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Top"
+                                       Margin="0,40,0,0"/>
+                        </DockPanel>
                     </Border>
 
                 </Grid>
