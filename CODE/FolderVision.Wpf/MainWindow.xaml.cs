@@ -30,6 +30,9 @@ namespace FolderVision.Wpf
         private Dictionary<string, Border>         _pathToFlashBorder    = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, int>   _duplicateNavIndex    = new(StringComparer.OrdinalIgnoreCase);
 
+        // Default export folder (set via settings panel)
+        private string _defaultExportFolder = string.Empty;
+
         // Tab strip scroll
         private System.Windows.Controls.ScrollViewer? _tabHeaderScroll;
         private System.Windows.Controls.Button? _tabScrollLeftBtn;
@@ -922,6 +925,7 @@ namespace FolderVision.Wpf
             {
                 var content = new PreviewTabContent();
                 content.Initialize(root, maxDepth);
+                content.SetPdfTitle(root.FullPath);
 
                 var tab = new TabItem { Content = content };
                 tab.Header = BuildPreviewTabHeader($"scan {idx++}", tab);
@@ -1113,25 +1117,36 @@ namespace FolderVision.Wpf
                 return;
             }
 
-            // Single root → one SaveFileDialog, one PDF (existing behaviour)
+            // Single root → one PDF (default folder or SaveFileDialog)
             if (roots.Count <= 1)
             {
-                var dialog = new Microsoft.Win32.SaveFileDialog
+                bool useDefault = UseDefaultFolderCheckBox.IsChecked == true
+                               && !string.IsNullOrEmpty(_defaultExportFolder);
+                string outputPath;
+                if (useDefault)
                 {
-                    Title = "Save PDF Report",
-                    Filter = "PDF Files (*.pdf)|*.pdf",
-                    FileName = BuildPdfFileName(_lastScanResult),
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-                };
-                if (dialog.ShowDialog() != true) return;
+                    outputPath = System.IO.Path.Combine(_defaultExportFolder, BuildPdfFileName(_lastScanResult));
+                }
+                else
+                {
+                    var dialog = new Microsoft.Win32.SaveFileDialog
+                    {
+                        Title            = "Save PDF Report",
+                        Filter           = "PDF Files (*.pdf)|*.pdf",
+                        FileName         = BuildPdfFileName(_lastScanResult),
+                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                    };
+                    if (dialog.ShowDialog() != true) return;
+                    outputPath = dialog.FileName;
+                }
 
                 try
                 {
                     ExportPdfButton.IsEnabled = false;
                     SetStatus("Exporting PDF...");
-                    await new PdfExporter(pdfOptions).ExportAsync(_lastScanResult, dialog.FileName);
-                    SetStatus($"PDF exported: {dialog.FileName}");
-                    OpenPdfIfRequested(dialog.FileName);
+                    await new PdfExporter(pdfOptions).ExportAsync(_lastScanResult, outputPath);
+                    SetStatus($"PDF exported: {outputPath}");
+                    OpenPdfIfRequested(outputPath);
                 }
                 catch (Exception ex)
                 {
@@ -1143,8 +1158,10 @@ namespace FolderVision.Wpf
                 return;
             }
 
-            // Multiple roots → one SaveFileDialog per root, one PDF each
+            // Multiple roots → one PDF per root (default folder or SaveFileDialog per root)
             var exported = new List<string>();
+            bool useDefaultMulti = UseDefaultFolderCheckBox.IsChecked == true
+                                && !string.IsNullOrEmpty(_defaultExportFolder);
             try
             {
                 ExportPdfButton.IsEnabled = false;
@@ -1156,19 +1173,28 @@ namespace FolderVision.Wpf
                     foreach (var p in _lastScanResult.ScannedPaths) singleResult.AddScannedPath(p);
                     singleResult.UpdateTotals();
 
-                    var dialog = new Microsoft.Win32.SaveFileDialog
+                    string multiPath;
+                    if (useDefaultMulti)
                     {
-                        Title = $"Save PDF – scan {i + 1} of {roots.Count}: {root.FullPath}",
-                        Filter = "PDF Files (*.pdf)|*.pdf",
-                        FileName = BuildPdfFileNameFromPath(root.FullPath),
-                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-                    };
-                    if (dialog.ShowDialog() != true) break;
+                        multiPath = System.IO.Path.Combine(_defaultExportFolder, BuildPdfFileNameFromPath(root.FullPath));
+                    }
+                    else
+                    {
+                        var dialog = new Microsoft.Win32.SaveFileDialog
+                        {
+                            Title            = $"Save PDF – scan {i + 1} of {roots.Count}: {root.FullPath}",
+                            Filter           = "PDF Files (*.pdf)|*.pdf",
+                            FileName         = BuildPdfFileNameFromPath(root.FullPath),
+                            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                        };
+                        if (dialog.ShowDialog() != true) break;
+                        multiPath = dialog.FileName;
+                    }
 
                     SetStatus($"Exporting PDF {i + 1}/{roots.Count}…");
-                    await new PdfExporter(pdfOptions).ExportAsync(singleResult, dialog.FileName);
-                    exported.Add(dialog.FileName);
-                    OpenPdfIfRequested(dialog.FileName);
+                    await new PdfExporter(pdfOptions).ExportAsync(singleResult, multiPath);
+                    exported.Add(multiPath);
+                    OpenPdfIfRequested(multiPath);
                 }
 
                 if (exported.Count > 0)
@@ -1206,26 +1232,42 @@ namespace FolderVision.Wpf
                             singleResult.AddScannedPath(p);
                     singleResult.UpdateTotals();
 
-                    // Per-tab options (inherit base options + tab-specific IncludeHeader)
+                    // Per-tab options (inherit base options + tab-specific IncludeHeader + editable title)
                     var tabOptions = new PdfExportOptions
                     {
                         MaxTreeDepth  = pdfOptions.MaxTreeDepth,
-                        IncludeHeader = previewContent.IncludeHeader
+                        IncludeHeader = previewContent.IncludeHeader,
+                        CustomTitle   = string.IsNullOrWhiteSpace(previewContent.PdfTitle)
+                                            ? null
+                                            : previewContent.PdfTitle
                     };
 
-                    var dialog = new Microsoft.Win32.SaveFileDialog
+                    // Resolve output path: default folder (no dialog) or SaveFileDialog
+                    string outputPath;
+                    bool useDefault = UseDefaultFolderCheckBox.IsChecked == true
+                                   && !string.IsNullOrEmpty(_defaultExportFolder);
+                    if (useDefault)
                     {
-                        Title = total > 1 ? $"Save PDF — scan {i + 1} of {total}" : "Save PDF Report",
-                        Filter = "PDF Files (*.pdf)|*.pdf",
-                        FileName = BuildPdfFileNameFromPath(filteredRoot.FullPath),
-                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-                    };
-                    if (dialog.ShowDialog() != true) continue;
+                        var fileName = BuildPdfFileNameFromPath(filteredRoot.FullPath);
+                        outputPath   = System.IO.Path.Combine(_defaultExportFolder, fileName);
+                    }
+                    else
+                    {
+                        var dialog = new Microsoft.Win32.SaveFileDialog
+                        {
+                            Title            = total > 1 ? $"Save PDF — scan {i + 1} of {total}" : "Save PDF Report",
+                            Filter           = "PDF Files (*.pdf)|*.pdf",
+                            FileName         = BuildPdfFileNameFromPath(filteredRoot.FullPath),
+                            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                        };
+                        if (dialog.ShowDialog() != true) continue;
+                        outputPath = dialog.FileName;
+                    }
 
                     SetStatus($"Exporting PDF {i + 1}/{total}…");
-                    await new PdfExporter(tabOptions).ExportAsync(singleResult, dialog.FileName);
-                    exported.Add(dialog.FileName);
-                    OpenPdfIfRequested(dialog.FileName);
+                    await new PdfExporter(tabOptions).ExportAsync(singleResult, outputPath);
+                    exported.Add(outputPath);
+                    OpenPdfIfRequested(outputPath);
                 }
 
                 // ── Duplicates tab export ──────────────────────────────────────
@@ -1326,13 +1368,14 @@ namespace FolderVision.Wpf
             }
             AddPathButton.IsEnabled = !scanning;
             ThreadsSlider.IsEnabled = !scanning;
-            SkipHiddenCheckBox.IsEnabled = !scanning;
-            SkipSystemCheckBox.IsEnabled       = !scanning;
-            DetectDuplicatesCheckBox.IsEnabled      = !scanning;
-            ApproximateDuplicatesCheckBox.IsEnabled = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
-            SimilaritySliderPanel.IsEnabled         = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
-            ReportDepthSlider.IsEnabled           = !scanning;
-            GearButton.IsEnabled                  = !scanning;
+            SkipHiddenCheckBox.IsEnabled            = !scanning;
+            SkipSystemCheckBox.IsEnabled             = !scanning;
+            DetectDuplicatesCheckBox.IsEnabled       = !scanning;
+            ApproximateDuplicatesCheckBox.IsEnabled  = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
+            SimilaritySliderPanel.IsEnabled          = !scanning && DetectDuplicatesCheckBox.IsChecked == true;
+            ReportDepthSlider.IsEnabled              = !scanning;
+            GearButton.IsEnabled                     = !scanning;
+            UseDefaultFolderCheckBox.IsEnabled       = !scanning && !string.IsNullOrEmpty(_defaultExportFolder);
         }
 
         private void GearButton_Click(object sender, RoutedEventArgs e)
@@ -1343,6 +1386,28 @@ namespace FolderVision.Wpf
         private void SettingsBack_Click(object sender, RoutedEventArgs e)
         {
             SettingsPanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void BrowseDefaultFolder_Click(object sender, RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description         = "Choisir le dossier d'export PDF par défaut",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
+            };
+            if (!string.IsNullOrEmpty(_defaultExportFolder))
+                dialog.SelectedPath = _defaultExportFolder;
+
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                _defaultExportFolder              = dialog.SelectedPath;
+                DefaultFolderLabel.Text           = _defaultExportFolder;
+                DefaultFolderLabel.Foreground     =
+                    (System.Windows.Media.Brush)FindResource("TextSecondaryBrush");
+                UseDefaultFolderCheckBox.IsEnabled = true;
+                UseDefaultFolderCheckBox.IsChecked = true;
+            }
         }
 
         private void DetectDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)

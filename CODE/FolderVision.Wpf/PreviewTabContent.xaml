@@ -107,12 +107,19 @@
                 BorderBrush="#FF4A4A4D"
                 BorderThickness="0,0,0,1"
                 Padding="10,7">
-            <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="IncludeHeaderCheckBox"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0"
+                          x:Name="IncludeHeaderCheckBox"
                           Style="{StaticResource DarkCheckBox}"
                           IsChecked="False"
                           Margin="0,0,8,0"/>
-                <TextBlock Text="Header PDF"
+                <TextBlock Grid.Column="1"
+                           Text="Header PDF"
                            FontSize="12"
                            VerticalAlignment="Center"
                            FontFamily="Segoe UI">
@@ -128,7 +135,21 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-            </StackPanel>
+                <!-- Editable PDF title -->
+                <TextBox x:Name="PdfTitleTextBox"
+                         Grid.Column="2"
+                         Background="#FF1A1A1A"
+                         Foreground="#FFB0B0B0"
+                         CaretBrush="#FFB0B0B0"
+                         BorderBrush="#FF4A4A4D"
+                         BorderThickness="1"
+                         FontSize="11"
+                         FontFamily="Segoe UI"
+                         Padding="6,3"
+                         Margin="12,0,0,0"
+                         VerticalAlignment="Center"
+                         ToolTip="Titre du PDF — modifiable"/>
+            </Grid>
         </Border>
 
         <!-- Preview tree (hidden while loading) -->

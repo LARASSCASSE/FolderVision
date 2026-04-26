@@ -19,6 +19,14 @@ namespace FolderVision.Wpf
         // Unchecked (empty box) = header included in PDF  |  Checked (×) = header excluded
         public bool IncludeHeader => IncludeHeaderCheckBox.IsChecked != true;
 
+        /// <summary>Editable PDF title shown in the header bar. Defaults to the root path.</summary>
+        public string PdfTitle => PdfTitleTextBox.Text;
+
+        public void SetPdfTitle(string rootPath)
+        {
+            PdfTitleTextBox.Text = rootPath;
+        }
+
         // Cached after first call to Initialize so BuildLazyItem doesn't call FindResource each time
         private DataTemplate? _headerTemplate;
 

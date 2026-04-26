@@ -287,15 +287,6 @@
                                     Margin="0,0,0,12"
                                     ValueChanged="ThreadsSlider_ValueChanged"
 />
-                            <CheckBox x:Name="SkipHiddenCheckBox"
-                                      Content="Skip Hidden Folders" IsChecked="True"
-                                      Margin="0,0,0,8"
-                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-/>
-                            <CheckBox x:Name="SkipSystemCheckBox"
-                                      Content="Skip System Folders" IsChecked="True"
-                                      Margin="0,0,0,8"
-                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
                             <CheckBox x:Name="DetectDuplicatesCheckBox"
                                       Content="Detect duplicate folders"
                                       Margin="0,0,0,4"
@@ -376,6 +367,11 @@
                                       Content="Open PDF after export" FontSize="12"
                                       IsChecked="True"
                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                      Margin="0,0,0,8"/>
+                            <CheckBox x:Name="UseDefaultFolderCheckBox"
+                                      Content="Use default export folder" FontSize="11"
+                                      IsEnabled="False"
+                                      Foreground="{StaticResource TextMutedBrush}"
                                       Margin="0,0,0,0"/>
                         </StackPanel>
                     </Border>
@@ -413,14 +409,57 @@
                                                VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
-                            <!-- Placeholder content -->
-                            <TextBlock Text="Paramètres à venir..."
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       FontSize="12"
-                                       FontFamily="Segoe UI"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Top"
-                                       Margin="0,40,0,0"/>
+                            <!-- Settings content -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,14,14,14">
+
+                                    <!-- ── Scan ── -->
+                                    <TextBlock Text="SCAN"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Margin="0,0,0,10"/>
+                                    <CheckBox x:Name="SkipHiddenCheckBox"
+                                              Content="Skip Hidden Folders" IsChecked="True"
+                                              Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                              Margin="0,0,0,8"/>
+                                    <CheckBox x:Name="SkipSystemCheckBox"
+                                              Content="Skip System Folders" IsChecked="True"
+                                              Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                              Margin="0,0,0,24"/>
+
+                                    <!-- ── Export ── -->
+                                    <TextBlock Text="EXPORT"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Margin="0,0,0,10"/>
+                                    <TextBlock Text="Default export folder"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Margin="0,0,0,6"/>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DefaultFolderLabel"
+                                                   Grid.Column="0"
+                                                   Text="(not set)"
+                                                   FontSize="11"
+                                                   FontFamily="Consolas"
+                                                   Foreground="#FF505050"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1"
+                                                Content="&#xE838;"
+                                                FontFamily="Segoe MDL2 Assets"
+                                                Style="{StaticResource GearButtonStyle}"
+                                                ToolTip="Choisir un dossier"
+                                                Click="BrowseDefaultFolder_Click"/>
+                                    </Grid>
+
+                                </StackPanel>
+                            </ScrollViewer>
                         </DockPanel>
                     </Border>
 
