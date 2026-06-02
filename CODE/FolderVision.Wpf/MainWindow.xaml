@@ -206,10 +206,11 @@
                                             </Button.Style>
                                         </Button>
                                         <TextBlock Grid.Column="1"
-                                                   Text="{Binding}"
+                                                   Text="{Binding DisplayLabel}"
                                                    FontSize="12"
                                                    VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding RealPath}"/>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>

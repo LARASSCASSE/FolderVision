@@ -33,6 +33,47 @@ namespace FolderVision.Wpf
         // Default export folder (set via settings panel)
         private string _defaultExportFolder = string.Empty;
 
+        // ── Path entry wrapper (display label + real path) ─────────────────────
+        private sealed class PathEntry
+        {
+            public string RealPath    { get; }
+            public string DisplayLabel { get; }
+
+            public PathEntry(string realPath)
+            {
+                RealPath     = realPath;
+                DisplayLabel = BuildDisplayLabel(realPath);
+            }
+
+            private static string BuildDisplayLabel(string path)
+            {
+                try
+                {
+                    // Normalise to backslash root form (e.g. "D:\")
+                    var norm = System.IO.Path.GetFullPath(path).TrimEnd('\\', '/') + '\\';
+                    var drive = System.IO.DriveInfo.GetDrives()
+                        .FirstOrDefault(d => string.Equals(
+                            d.RootDirectory.FullName, norm,
+                            StringComparison.OrdinalIgnoreCase));
+
+                    if (drive != null)
+                    {
+                        var letter = drive.Name.TrimEnd('\\'); // e.g. "D:"
+                        var label  = drive.IsReady && !string.IsNullOrWhiteSpace(drive.VolumeLabel)
+                                     ? drive.VolumeLabel
+                                     : drive.DriveType.ToString();
+                        return $"{label} ({letter})";
+                    }
+                }
+                catch { /* non-drive path or inaccessible — fall through */ }
+
+                return path;
+            }
+
+            // So PathsListBox deduplication works when comparing items
+            public override string ToString() => RealPath;
+        }
+
         // Tab strip scroll
         private System.Windows.Controls.ScrollViewer? _tabHeaderScroll;
         private System.Windows.Controls.Button? _tabScrollLeftBtn;
@@ -105,7 +146,7 @@ namespace FolderVision.Wpf
         private int AddFolderPaths(IEnumerable<string> paths)
         {
             var existing = new HashSet<string>(
-                PathsListBox.Items.Cast<string>(),
+                PathsListBox.Items.Cast<PathEntry>().Select(e => e.RealPath),
                 StringComparer.OrdinalIgnoreCase);
 
             var added = 0;
@@ -114,7 +155,7 @@ namespace FolderVision.Wpf
                 if (!Directory.Exists(path)) continue;
                 if (!existing.Add(path)) continue;  // Add returns false if already present
 
-                PathsListBox.Items.Add(path);
+                PathsListBox.Items.Add(new PathEntry(path));
                 added++;
             }
             if (added > 0) UpdateStartButtonState();
@@ -211,7 +252,7 @@ namespace FolderVision.Wpf
 
         private void RemovePathItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.Button btn && btn.DataContext is string path)
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is PathEntry path)
             {
                 PathsListBox.Items.Remove(path);
                 UpdateStartButtonState();
@@ -1346,7 +1387,7 @@ namespace FolderVision.Wpf
         {
             var list = new List<string>();
             foreach (var item in PathsListBox.Items)
-                if (item is string s) list.Add(s);
+                if (item is PathEntry e) list.Add(e.RealPath);
             return list;
         }
 
