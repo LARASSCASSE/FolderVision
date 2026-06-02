@@ -1442,13 +1442,25 @@ namespace FolderVision.Wpf
 
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                _defaultExportFolder              = dialog.SelectedPath;
-                DefaultFolderLabel.Text           = _defaultExportFolder;
-                DefaultFolderLabel.Foreground     =
+                _defaultExportFolder               = dialog.SelectedPath;
+                DefaultFolderLabel.Text            = _defaultExportFolder;
+                DefaultFolderLabel.Foreground      =
                     (System.Windows.Media.Brush)FindResource("TextSecondaryBrush");
-                UseDefaultFolderCheckBox.IsEnabled = true;
-                UseDefaultFolderCheckBox.IsChecked = true;
+                ClearDefaultFolderButton.Visibility = Visibility.Visible;
+                UseDefaultFolderCheckBox.IsEnabled  = true;
+                UseDefaultFolderCheckBox.IsChecked  = true;
             }
+        }
+
+        private void ClearDefaultFolder_Click(object sender, RoutedEventArgs e)
+        {
+            _defaultExportFolder               = string.Empty;
+            DefaultFolderLabel.Text            = "(not set)";
+            DefaultFolderLabel.Foreground      = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0x50, 0x50, 0x50));
+            ClearDefaultFolderButton.Visibility = Visibility.Collapsed;
+            UseDefaultFolderCheckBox.IsChecked  = false;
+            UseDefaultFolderCheckBox.IsEnabled  = false;
         }
 
         private void DetectDuplicatesCheckBox_Changed(object sender, RoutedEventArgs e)
