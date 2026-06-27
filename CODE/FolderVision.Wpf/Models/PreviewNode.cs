@@ -10,7 +10,7 @@ namespace FolderVision.Wpf.Models
     public class PreviewNode : INotifyPropertyChanged
     {
         private bool _isIncluded = true;
-        private bool _isExpanded = true;
+        private bool _isExpanded = false;
         private string _displayName = string.Empty;
         private ObservableCollection<PreviewNode> _children = new();
 
@@ -87,6 +87,17 @@ namespace FolderVision.Wpf.Models
                         child.IsIncluded = false;
                 }
             }
+        }
+
+        /// <summary>
+        /// Toggles IsIncluded without cascading to children —
+        /// used by double-click inversion so each child is inverted independently.
+        /// </summary>
+        internal void InvertIncluded()
+        {
+            _isIncluded = !_isIncluded;
+            OnPropertyChanged(nameof(IsIncluded));
+            OnPropertyChanged(nameof(ShowUncheckButton));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

@@ -11,7 +11,7 @@
             </ResourceDictionary.MergedDictionaries>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
 
-            <!-- Node label -->
+            <!-- Node label style -->
             <Style x:Key="PreviewNodeLabel" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="#FFFFFFFF"/>
                 <Setter Property="FontSize" Value="12"/>
@@ -25,42 +25,22 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- Node inline editor -->
-            <Style x:Key="PreviewNodeEditor" TargetType="TextBox">
-                <Setter Property="Background" Value="#FF2D2D30"/>
-                <Setter Property="Foreground" Value="#FFFFFFFF"/>
-                <Setter Property="BorderBrush" Value="#FF4C7FDB"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="3,1"/>
-                <Setter Property="FontSize" Value="12"/>
-                <Setter Property="FontFamily" Value="Segoe UI"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="Visibility" Value="Collapsed"/>
-                <Setter Property="MinWidth" Value="160"/>
-            </Style>
-
-            <!-- TreeViewItem: bind IsExpanded to PreviewNode.IsExpanded -->
-            <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
-                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-            </Style>
-
-            <!-- HierarchicalDataTemplate -->
-            <HierarchicalDataTemplate DataType="{x:Type local:PreviewNode}"
-                                      ItemsSource="{Binding Children}">
+            <!--
+                Keyed header DataTemplate — applied explicitly via TreeViewItem.HeaderTemplate in code.
+                NOT auto-applied by DataType so WPF does NOT auto-generate child containers.
+                DataContext inside this template = TreeViewItem.Header = the PreviewNode.
+            -->
+            <DataTemplate x:Key="PreviewNodeHeaderTemplate">
                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                    <!-- Unchecked = included (empty box) | Checked = excluded (shows ×) -->
+                    <!-- Unchecked = included | Checked (×) = excluded -->
                     <CheckBox IsChecked="{Binding IsIncluded, Mode=TwoWay, Converter={StaticResource InverseBool}}"
                               Style="{StaticResource DarkCheckBox}"
                               Margin="0,0,6,0"/>
                     <TextBlock Text="{Binding DisplayName}"
                                Style="{StaticResource PreviewNodeLabel}"
-                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"/>
-                    <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource PreviewNodeEditor}"
-                             LostFocus="NodeEditor_LostFocus"
-                             KeyDown="NodeEditor_KeyDown"/>
-
-                    <!-- Bulk-uncheck button: only when >5 children, only on hover -->
+                               MouseLeftButtonDown="NodeLabel_MouseLeftButtonDown"
+                               ToolTip="Double-clic : cocher/décocher tous les sous-dossiers"/>
+                    <!-- Bulk-uncheck button: visible on hover when ≥5 excluded children -->
                     <Button Content="✕ tout décocher"
                             Margin="8,0,0,0"
                             Padding="7,2"
@@ -111,7 +91,7 @@
                         </Button.Style>
                     </Button>
                 </StackPanel>
-            </HierarchicalDataTemplate>
+            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -127,12 +107,19 @@
                 BorderBrush="#FF4A4A4D"
                 BorderThickness="0,0,0,1"
                 Padding="10,7">
-            <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="IncludeHeaderCheckBox"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0"
+                          x:Name="IncludeHeaderCheckBox"
                           Style="{StaticResource DarkCheckBox}"
                           IsChecked="False"
                           Margin="0,0,8,0"/>
-                <TextBlock Text="Header PDF"
+                <TextBlock Grid.Column="1"
+                           Text="Header PDF"
                            FontSize="12"
                            VerticalAlignment="Center"
                            FontFamily="Segoe UI">
@@ -148,14 +135,65 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-            </StackPanel>
+                <!-- Editable PDF title -->
+                <TextBox x:Name="PdfTitleTextBox"
+                         Grid.Column="2"
+                         Background="#FF1A1A1A"
+                         Foreground="#FFB0B0B0"
+                         CaretBrush="#FFB0B0B0"
+                         BorderBrush="#FF4A4A4D"
+                         BorderThickness="1"
+                         FontSize="11"
+                         FontFamily="Segoe UI"
+                         Padding="6,3"
+                         Margin="12,0,0,0"
+                         VerticalAlignment="Center"
+                         ToolTip="Titre du PDF — modifiable"/>
+            </Grid>
         </Border>
 
-        <!-- Preview tree -->
+        <!-- Preview tree (hidden while loading) -->
         <TreeView x:Name="PreviewTree"
                   Grid.Row="1"
                   Background="#FF252526"
                   BorderThickness="0"
-                  Margin="4"/>
+                  Margin="4"
+                  Visibility="Collapsed"/>
+
+        <!-- Loading overlay — shown while BuildNode runs in background -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.Row="1"
+              Background="#FF252526"
+              Visibility="Visible">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Ellipse Width="44" Height="44"
+                         Stroke="#FF4C7FDB"
+                         StrokeThickness="4"
+                         StrokeDashArray="15 16"
+                         RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="SpinnerRotate" Angle="0"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever">
+                                    <DoubleAnimation Storyboard.TargetName="SpinnerRotate"
+                                                     Storyboard.TargetProperty="Angle"
+                                                     From="0" To="360"
+                                                     Duration="0:0:0.75"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+                <TextBlock Text="Chargement..."
+                           Foreground="#FF707070"
+                           FontSize="12"
+                           FontFamily="Segoe UI"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,0"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

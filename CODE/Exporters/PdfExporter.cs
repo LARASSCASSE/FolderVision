@@ -272,7 +272,7 @@ namespace FolderVision.Exporters
             var title = _options.CustomTitle ?? BuildReportTitle(rootPath);
 
             // Title row
-            var titleTable = new Table(2, true)
+            var titleTable = new Table(1, true)
                 .SetWidth(UnitValue.CreatePercentValue(100))
                 .SetBorder(Border.NO_BORDER)
                 .SetMarginBottom(6);
@@ -283,21 +283,11 @@ namespace FolderVision.Exporters
                     .SetFont(BoldFont).SetFontSize(20)
                     .SetFontColor(ColorConstants.DARK_GRAY));
 
-            var dateCell = new Cell()
-                .SetBorder(Border.NO_BORDER)
-                .SetVerticalAlignment(VerticalAlignment.BOTTOM)
-                .Add(new Paragraph($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}")
-                    .SetFont(RegularFont).SetFontSize(9)
-                    .SetFontColor(ColorConstants.GRAY)
-                    .SetTextAlignment(TextAlignment.RIGHT));
-
             titleTable.AddCell(titleCell);
-            titleTable.AddCell(dateCell);
             Document.Add(titleTable);
 
             // Compact metadata row
             var meta = $"Scan date: {scanResult.ScanStartTime:yyyy-MM-dd HH:mm}   " +
-                       $"Duration: {FormatDuration(scanResult.ScanDuration)}   " +
                        $"Path(s): {string.Join(", ", scanResult.ScannedPaths)}";
             Document.Add(new Paragraph(meta)
                 .SetFont(RegularFont).SetFontSize(8)
